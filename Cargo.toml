@@ -15,4 +15,4 @@ hyper = "*"
 serde = "0.8"
 serde_json = "0.8"
 serde_derive = "0.8"
-bambou = { path = "/home/corentih/rust/bambou-rs" }
+bambou = { git = "https://github.com/little-dude/bambou-rs" }
