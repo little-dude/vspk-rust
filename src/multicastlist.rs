@@ -36,7 +36,7 @@ pub use globalmetadata::GlobalMetadata;
 pub use multicastchannelmap::MultiCastChannelMap;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct MultiCastList<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

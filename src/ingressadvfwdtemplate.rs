@@ -37,7 +37,7 @@ pub use ingressadvfwdentrytemplate::IngressAdvFwdEntryTemplate;
 pub use job::Job;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct IngressAdvFwdTemplate<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

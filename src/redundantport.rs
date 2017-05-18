@@ -37,7 +37,7 @@ pub use globalmetadata::GlobalMetadata;
 pub use nsport::NSPort;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct RedundantPort<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

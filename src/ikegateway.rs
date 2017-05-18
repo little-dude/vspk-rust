@@ -37,7 +37,7 @@ pub use ikesubnet::IKESubnet;
 pub use globalmetadata::GlobalMetadata;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct IKEGateway<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

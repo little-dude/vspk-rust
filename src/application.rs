@@ -35,7 +35,7 @@ pub use monitorscope::Monitorscope;
 pub use applicationbinding::ApplicationBinding;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct Application<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

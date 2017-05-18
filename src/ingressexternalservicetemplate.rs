@@ -37,7 +37,7 @@ pub use ingressexternalservicetemplateentry::IngressExternalServiceTemplateEntry
 pub use job::Job;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct IngressExternalServiceTemplate<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

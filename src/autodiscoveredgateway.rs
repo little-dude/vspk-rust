@@ -39,7 +39,7 @@ pub use nsport::NSPort;
 pub use eventlog::EventLog;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct AutoDiscoveredGateway<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

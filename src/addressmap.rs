@@ -37,7 +37,7 @@ pub use statistics::Statistics;
 pub use statisticspolicy::StatisticsPolicy;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct AddressMap<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

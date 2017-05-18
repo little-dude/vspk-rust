@@ -37,7 +37,7 @@ pub use vrsaddressrange::VRSAddressRange;
 pub use vrsredeploymentpolicy::VRSRedeploymentpolicy;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct VCenterVRSConfig<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

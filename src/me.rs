@@ -102,7 +102,7 @@ pub use autodiscoveredgateway::AutoDiscoveredGateway;
 pub use systemconfig::SystemConfig;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct Me<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

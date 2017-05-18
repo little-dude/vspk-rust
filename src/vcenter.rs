@@ -40,7 +40,7 @@ pub use vrsredeploymentpolicy::VRSRedeploymentpolicy;
 pub use autodiscovereddatacenter::Autodiscovereddatacenter;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct VCenter<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

@@ -34,7 +34,7 @@ use serde_json;
 pub use applicationperformancemanagement::Applicationperformancemanagement;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct PerformanceMonitor<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

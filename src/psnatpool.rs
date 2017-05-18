@@ -35,7 +35,7 @@ pub use pspatmap::PSPATMap;
 pub use ptranslationmap::PTranslationMap;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct PSNATPool<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

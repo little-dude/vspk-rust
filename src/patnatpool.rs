@@ -41,7 +41,7 @@ pub use statisticspolicy::StatisticsPolicy;
 pub use bulkstatistics::BulkStatistics;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct PATNATPool<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

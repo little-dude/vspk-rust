@@ -34,7 +34,7 @@ use serde_json;
 pub use vport::VPort;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct Trunk<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

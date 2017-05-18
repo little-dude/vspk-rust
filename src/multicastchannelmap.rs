@@ -37,7 +37,7 @@ pub use multicastrange::MultiCastRange;
 pub use eventlog::EventLog;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct MultiCastChannelMap<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

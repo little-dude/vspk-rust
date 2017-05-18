@@ -45,7 +45,7 @@ pub use ltestatistics::Ltestatistics;
 pub use eventlog::EventLog;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct VLAN<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

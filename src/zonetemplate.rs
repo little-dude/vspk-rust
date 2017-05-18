@@ -38,7 +38,7 @@ pub use subnettemplate::SubnetTemplate;
 pub use eventlog::EventLog;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct ZoneTemplate<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

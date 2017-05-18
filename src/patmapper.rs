@@ -34,7 +34,7 @@ use serde_json;
 pub use sharednetworkresource::SharedNetworkResource;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct PATMapper<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

@@ -40,7 +40,7 @@ pub use vrsredeploymentpolicy::VRSRedeploymentpolicy;
 pub use autodiscoverhypervisorfromcluster::AutoDiscoverHypervisorFromCluster;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct VCenterCluster<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

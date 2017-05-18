@@ -36,7 +36,7 @@ pub use globalmetadata::GlobalMetadata;
 pub use nsporttemplate::NSPortTemplate;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct NSGatewayTemplate<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

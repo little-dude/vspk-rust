@@ -33,7 +33,7 @@ use serde_json;
 
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct DemarcationService<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

@@ -39,7 +39,7 @@ pub use enterprisepermission::EnterprisePermission;
 pub use eventlog::EventLog;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct WANService<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

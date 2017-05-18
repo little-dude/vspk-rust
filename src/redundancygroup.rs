@@ -43,7 +43,7 @@ pub use vsgredundantport::VsgRedundantPort;
 pub use eventlog::EventLog;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct RedundancyGroup<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

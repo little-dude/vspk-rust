@@ -37,7 +37,7 @@ pub use job::Job;
 pub use statistics::Statistics;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct IngressACLEntryTemplate<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

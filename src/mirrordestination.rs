@@ -39,7 +39,7 @@ pub use ingressadvfwdentrytemplate::IngressAdvFwdEntryTemplate;
 pub use vportmirror::VPortMirror;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct MirrorDestination<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

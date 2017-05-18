@@ -36,7 +36,7 @@ pub use keyservermonitorencryptedseed::KeyServerMonitorEncryptedSeed;
 pub use globalmetadata::GlobalMetadata;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct KeyServerMonitorSeed<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

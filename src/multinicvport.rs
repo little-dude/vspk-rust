@@ -36,7 +36,7 @@ pub use globalmetadata::GlobalMetadata;
 pub use vport::VPort;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct MultiNICVPort<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

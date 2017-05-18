@@ -37,7 +37,7 @@ pub use job::Job;
 pub use eventlog::EventLog;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct RedirectionTargetTemplate<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

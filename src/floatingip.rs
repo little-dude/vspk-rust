@@ -37,7 +37,7 @@ pub use vport::VPort;
 pub use eventlog::EventLog;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct FloatingIp<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

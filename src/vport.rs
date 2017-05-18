@@ -58,7 +58,7 @@ pub use statisticspolicy::StatisticsPolicy;
 pub use eventlog::EventLog;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct VPort<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

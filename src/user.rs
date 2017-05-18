@@ -40,7 +40,7 @@ pub use avatar::Avatar;
 pub use eventlog::EventLog;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct User<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

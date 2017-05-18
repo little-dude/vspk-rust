@@ -34,7 +34,7 @@ use serde_json;
 pub use application::Application;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct L7applicationsignature<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

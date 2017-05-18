@@ -36,7 +36,7 @@ pub use floatingipacltemplateentry::FloatingIPACLTemplateEntry;
 pub use globalmetadata::GlobalMetadata;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct FloatingIPACLTemplate<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

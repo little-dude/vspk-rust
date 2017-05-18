@@ -35,7 +35,7 @@ pub use firewallrule::FirewallRule;
 pub use domain::Domain;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct FirewallAcl<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

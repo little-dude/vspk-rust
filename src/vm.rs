@@ -40,7 +40,7 @@ pub use vrs::VRS;
 pub use eventlog::EventLog;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct VM<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

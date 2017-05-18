@@ -34,7 +34,7 @@ use serde_json;
 pub use overlaypatnatentry::OverlayPATNATEntry;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct OverlayAddressPool<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

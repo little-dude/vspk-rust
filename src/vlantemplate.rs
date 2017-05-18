@@ -37,7 +37,7 @@ pub use uplinkconnection::UplinkConnection;
 pub use brconnection::BRConnection;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct VLANTemplate<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

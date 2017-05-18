@@ -41,7 +41,7 @@ pub use vpnconnection::VPNConnection;
 pub use staticroute::StaticRoute;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct SharedNetworkResource<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

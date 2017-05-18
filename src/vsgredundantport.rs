@@ -39,7 +39,7 @@ pub use globalmetadata::GlobalMetadata;
 pub use enterprisepermission::EnterprisePermission;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct VsgRedundantPort<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

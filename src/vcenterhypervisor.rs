@@ -39,7 +39,7 @@ pub use vrsmetrics::VRSMetrics;
 pub use vrsredeploymentpolicy::VRSRedeploymentpolicy;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct VCenterHypervisor<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

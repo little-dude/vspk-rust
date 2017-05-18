@@ -36,7 +36,7 @@ pub use globalmetadata::GlobalMetadata;
 pub use qos::QOS;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct PolicyDecision<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

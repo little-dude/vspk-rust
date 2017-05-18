@@ -36,7 +36,7 @@ pub use globalmetadata::GlobalMetadata;
 pub use enterprisesecureddata::EnterpriseSecuredData;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct EnterpriseSecurity<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

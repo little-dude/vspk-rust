@@ -35,7 +35,7 @@ pub use metadata::Metadata;
 pub use globalmetadata::GlobalMetadata;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct InfrastructureConfig<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

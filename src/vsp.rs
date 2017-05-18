@@ -39,7 +39,7 @@ pub use vsd::VSD;
 pub use eventlog::EventLog;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct VSP<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

@@ -34,7 +34,7 @@ use serde_json;
 pub use applicationbinding::ApplicationBinding;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct Applicationperformancemanagement<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

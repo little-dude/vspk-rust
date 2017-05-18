@@ -36,7 +36,7 @@ pub use globalmetadata::GlobalMetadata;
 pub use eventlog::EventLog;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct License<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

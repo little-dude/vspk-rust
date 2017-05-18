@@ -45,7 +45,7 @@ pub use multinicvport::MultiNICVPort;
 pub use eventlog::EventLog;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct VRS<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

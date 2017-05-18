@@ -40,7 +40,7 @@ pub use psnatpool::PSNATPool;
 pub use overlayaddresspool::OverlayAddressPool;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct Link<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]

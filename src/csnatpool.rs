@@ -34,7 +34,7 @@ use serde_json;
 pub use ctranslationmap::CTranslationMap;
 
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct CSNATPool<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
