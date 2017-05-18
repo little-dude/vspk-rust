@@ -1,4 +1,5 @@
-// Copyright (c) 2015-2016, Nokia Inc
+// Copyright (c) 2015 Alcatel-Lucent, (c) 2016 Nokia
+//
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -24,8 +25,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-use bambou::{BambouError, RestEntity, Session, SessionConfig};
-use hyper::client::{Response};
+use bambou::{Error, RestEntity, Session};
+use reqwest::Response;
 use std::collections::BTreeMap;
 use serde_json;
 
@@ -35,55 +36,86 @@ pub use floatingipacltemplateentry::FloatingIPACLTemplateEntry;
 pub use globalmetadata::GlobalMetadata;
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct FloatingIPACLTemplate<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
     _session: Option<&'a Session>,
+
     #[serde(rename="ID")]
     id: Option<String>,
-    
+
     #[serde(rename="parentID")]
     parent_id: Option<String>,
+
     #[serde(rename="parentType")]
     parent_type: Option<String>,
+
     owner: Option<String>,
-    name: Option<String>,
+
+    
+    pub name: Option<String>,
     
     #[serde(rename="lastUpdatedBy")]
-    last_updated_by: Option<String>,
-    active: bool,
+    pub last_updated_by: Option<String>,
+    
+    pub active: bool,
     
     #[serde(rename="defaultAllowIP")]
-    default_allow_ip: bool,
+    pub default_allow_ip: bool,
     
     #[serde(rename="defaultAllowNonIP")]
-    default_allow_non_ip: bool,
-    description: Option<String>,
+    pub default_allow_non_ip: bool,
+    
+    pub description: Option<String>,
     
     #[serde(rename="entityScope")]
-    entity_scope: Option<String>,
+    pub entity_scope: Option<String>,
     
     #[serde(rename="policyState")]
-    policy_state: Option<String>,
-    priority: u64,
+    pub policy_state: Option<String>,
+    
+    pub priority: u64,
     
     #[serde(rename="priorityType")]
-    priority_type: Option<String>,
+    pub priority_type: Option<String>,
     
     #[serde(rename="associatedLiveEntityID")]
-    associated_live_entity_id: Option<String>,
+    pub associated_live_entity_id: Option<String>,
     
     #[serde(rename="externalID")]
-    external_id: Option<String>,
+    pub external_id: Option<String>,
     
 }
 
 impl<'a> RestEntity<'a> for FloatingIPACLTemplate<'a> {
-    fn fetch(&mut self) -> Result<Response, BambouError> {
+    fn fetch(&mut self) -> Result<Response, Error> {
         match self._session {
-            Some(session) => session.fetch(self),
-            None => Err(BambouError::NoSession),
+            Some(session) => session.fetch_entity(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn save(&mut self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.save(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn delete(self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.delete(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn create_child<C>(&self, child: &mut C) -> Result<Response, Error>
+        where C: RestEntity<'a>
+    {
+        match self._session {
+            Some(session) => session.create_child(self, child),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -103,12 +135,12 @@ impl<'a> RestEntity<'a> for FloatingIPACLTemplate<'a> {
         self.id.as_ref().and_then(|id| Some(id.as_str()))
     }
 
-    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, BambouError>
+    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, Error>
         where R: RestEntity<'a>
     {
         match self._session {
             Some(session) => session.fetch_children(self, children),
-            None => Err(BambouError::NoSession),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -119,49 +151,25 @@ impl<'a> RestEntity<'a> for FloatingIPACLTemplate<'a> {
     fn set_session(&mut self, session: &'a Session) {
         self._session = Some(session);
     }
-
-    fn save(&mut self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.save(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn delete(self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.delete(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn create_child<C>(&self, child: &mut C) -> Result<Response, BambouError>
-        where C: RestEntity<'a>
-    {
-        match self._session {
-            Some(session) => session.create_child(self, child),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
 }
 
 impl<'a> FloatingIPACLTemplate<'a> {
 
-    fn fetch_metadatas(&self) -> Result<Vec<Metadata>, BambouError> {
+    pub fn fetch_metadatas(&self) -> Result<Vec<Metadata>, Error> {
         let mut metadatas = Vec::<Metadata>::new();
-        try!(self.fetch_children(&mut metadatas));
+        let _ = self.fetch_children(&mut metadatas)?;
         Ok(metadatas)
     }
 
-    fn fetch_egressfloatingipaclentrytemplates(&self) -> Result<Vec<FloatingIPACLTemplateEntry>, BambouError> {
+    pub fn fetch_egressfloatingipaclentrytemplates(&self) -> Result<Vec<FloatingIPACLTemplateEntry>, Error> {
         let mut egressfloatingipaclentrytemplates = Vec::<FloatingIPACLTemplateEntry>::new();
-        try!(self.fetch_children(&mut egressfloatingipaclentrytemplates));
+        let _ = self.fetch_children(&mut egressfloatingipaclentrytemplates)?;
         Ok(egressfloatingipaclentrytemplates)
     }
 
-    fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, BambouError> {
+    pub fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, Error> {
         let mut globalmetadatas = Vec::<GlobalMetadata>::new();
-        try!(self.fetch_children(&mut globalmetadatas));
+        let _ = self.fetch_children(&mut globalmetadatas)?;
         Ok(globalmetadatas)
     }
 }

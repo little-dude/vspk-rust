@@ -1,4 +1,5 @@
-// Copyright (c) 2015-2016, Nokia Inc
+// Copyright (c) 2015 Alcatel-Lucent, (c) 2016 Nokia
+//
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -24,8 +25,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-use bambou::{BambouError, RestEntity, Session, SessionConfig};
-use hyper::client::{Response};
+use bambou::{Error, RestEntity, Session};
+use reqwest::Response;
 use std::collections::BTreeMap;
 use serde_json;
 
@@ -34,98 +35,133 @@ pub use metadata::Metadata;
 pub use globalmetadata::GlobalMetadata;
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct InfrastructureGatewayProfile<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
     _session: Option<&'a Session>,
+
     #[serde(rename="ID")]
     id: Option<String>,
-    
+
     #[serde(rename="parentID")]
     parent_id: Option<String>,
+
     #[serde(rename="parentType")]
     parent_type: Option<String>,
+
     owner: Option<String>,
+
     
     #[serde(rename="NTPServerKey")]
-    ntp_server_key: Option<String>,
+    pub ntp_server_key: Option<String>,
     
     #[serde(rename="NTPServerKeyID")]
-    ntp_server_key_id: u64,
-    name: Option<String>,
+    pub ntp_server_key_id: u64,
+    
+    pub name: Option<String>,
     
     #[serde(rename="lastUpdatedBy")]
-    last_updated_by: Option<String>,
+    pub last_updated_by: Option<String>,
     
     #[serde(rename="datapathSyncTimeout")]
-    datapath_sync_timeout: u64,
+    pub datapath_sync_timeout: u64,
     
     #[serde(rename="deadTimer")]
-    dead_timer: Option<String>,
+    pub dead_timer: Option<String>,
     
     #[serde(rename="deadTimerEnabled")]
-    dead_timer_enabled: bool,
+    pub dead_timer_enabled: bool,
     
     #[serde(rename="remoteLogMode")]
-    remote_log_mode: Option<String>,
+    pub remote_log_mode: Option<String>,
     
     #[serde(rename="remoteLogServerAddress")]
-    remote_log_server_address: Option<String>,
+    pub remote_log_server_address: Option<String>,
     
     #[serde(rename="remoteLogServerPort")]
-    remote_log_server_port: u64,
-    description: Option<String>,
+    pub remote_log_server_port: u64,
+    
+    pub description: Option<String>,
     
     #[serde(rename="metadataUpgradePath")]
-    metadata_upgrade_path: Option<String>,
+    pub metadata_upgrade_path: Option<String>,
+    
+    #[serde(rename="flowEvictionThreshold")]
+    pub flow_eviction_threshold: u64,
     
     #[serde(rename="enterpriseID")]
-    enterprise_id: Option<String>,
+    pub enterprise_id: Option<String>,
     
     #[serde(rename="entityScope")]
-    entity_scope: Option<String>,
+    pub entity_scope: Option<String>,
     
     #[serde(rename="controllerLessDuration")]
-    controller_less_duration: Option<String>,
+    pub controller_less_duration: Option<String>,
     
     #[serde(rename="controllerLessEnabled")]
-    controller_less_enabled: bool,
+    pub controller_less_enabled: bool,
     
     #[serde(rename="controllerLessForwardingMode")]
-    controller_less_forwarding_mode: Option<String>,
+    pub controller_less_forwarding_mode: Option<String>,
     
     #[serde(rename="controllerLessRemoteDuration")]
-    controller_less_remote_duration: Option<String>,
+    pub controller_less_remote_duration: Option<String>,
     
     #[serde(rename="forceImmediateSystemSync")]
-    force_immediate_system_sync: bool,
+    pub force_immediate_system_sync: bool,
+    
+    #[serde(rename="openFlowAuditTimer")]
+    pub open_flow_audit_timer: u64,
     
     #[serde(rename="upgradeAction")]
-    upgrade_action: Option<String>,
+    pub upgrade_action: Option<String>,
     
     #[serde(rename="proxyDNSName")]
-    proxy_dns_name: Option<String>,
+    pub proxy_dns_name: Option<String>,
     
     #[serde(rename="useTwoFactor")]
-    use_two_factor: bool,
+    pub use_two_factor: bool,
     
     #[serde(rename="statsCollectorPort")]
-    stats_collector_port: u64,
+    pub stats_collector_port: u64,
     
     #[serde(rename="externalID")]
-    external_id: Option<String>,
+    pub external_id: Option<String>,
     
     #[serde(rename="systemSyncScheduler")]
-    system_sync_scheduler: Option<String>,
+    pub system_sync_scheduler: Option<String>,
     
 }
 
 impl<'a> RestEntity<'a> for InfrastructureGatewayProfile<'a> {
-    fn fetch(&mut self) -> Result<Response, BambouError> {
+    fn fetch(&mut self) -> Result<Response, Error> {
         match self._session {
-            Some(session) => session.fetch(self),
-            None => Err(BambouError::NoSession),
+            Some(session) => session.fetch_entity(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn save(&mut self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.save(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn delete(self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.delete(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn create_child<C>(&self, child: &mut C) -> Result<Response, Error>
+        where C: RestEntity<'a>
+    {
+        match self._session {
+            Some(session) => session.create_child(self, child),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -145,12 +181,12 @@ impl<'a> RestEntity<'a> for InfrastructureGatewayProfile<'a> {
         self.id.as_ref().and_then(|id| Some(id.as_str()))
     }
 
-    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, BambouError>
+    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, Error>
         where R: RestEntity<'a>
     {
         match self._session {
             Some(session) => session.fetch_children(self, children),
-            None => Err(BambouError::NoSession),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -161,43 +197,19 @@ impl<'a> RestEntity<'a> for InfrastructureGatewayProfile<'a> {
     fn set_session(&mut self, session: &'a Session) {
         self._session = Some(session);
     }
-
-    fn save(&mut self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.save(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn delete(self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.delete(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn create_child<C>(&self, child: &mut C) -> Result<Response, BambouError>
-        where C: RestEntity<'a>
-    {
-        match self._session {
-            Some(session) => session.create_child(self, child),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
 }
 
 impl<'a> InfrastructureGatewayProfile<'a> {
 
-    fn fetch_metadatas(&self) -> Result<Vec<Metadata>, BambouError> {
+    pub fn fetch_metadatas(&self) -> Result<Vec<Metadata>, Error> {
         let mut metadatas = Vec::<Metadata>::new();
-        try!(self.fetch_children(&mut metadatas));
+        let _ = self.fetch_children(&mut metadatas)?;
         Ok(metadatas)
     }
 
-    fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, BambouError> {
+    pub fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, Error> {
         let mut globalmetadatas = Vec::<GlobalMetadata>::new();
-        try!(self.fetch_children(&mut globalmetadatas));
+        let _ = self.fetch_children(&mut globalmetadatas)?;
         Ok(globalmetadatas)
     }
 }

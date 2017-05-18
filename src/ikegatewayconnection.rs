@@ -1,4 +1,5 @@
-// Copyright (c) 2015-2016, Nokia Inc
+// Copyright (c) 2015 Alcatel-Lucent, (c) 2016 Nokia
+//
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -24,8 +25,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-use bambou::{BambouError, RestEntity, Session, SessionConfig};
-use hyper::client::{Response};
+use bambou::{Error, RestEntity, Session};
+use reqwest::Response;
 use std::collections::BTreeMap;
 use serde_json;
 
@@ -35,72 +36,102 @@ pub use globalmetadata::GlobalMetadata;
 pub use subnet::Subnet;
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct IKEGatewayConnection<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
     _session: Option<&'a Session>,
+
     #[serde(rename="ID")]
     id: Option<String>,
-    
+
     #[serde(rename="parentID")]
     parent_id: Option<String>,
+
     #[serde(rename="parentType")]
     parent_type: Option<String>,
+
     owner: Option<String>,
+
     
     #[serde(rename="NSGIdentifier")]
-    nsg_identifier: Option<String>,
+    pub nsg_identifier: Option<String>,
     
     #[serde(rename="NSGIdentifierType")]
-    nsg_identifier_type: Option<String>,
+    pub nsg_identifier_type: Option<String>,
     
     #[serde(rename="NSGRole")]
-    nsg_role: Option<String>,
-    name: Option<String>,
+    pub nsg_role: Option<String>,
+    
+    pub name: Option<String>,
     
     #[serde(rename="lastUpdatedBy")]
-    last_updated_by: Option<String>,
-    sequence: u64,
+    pub last_updated_by: Option<String>,
+    
+    pub sequence: u64,
     
     #[serde(rename="allowAnySubnet")]
-    allow_any_subnet: bool,
+    pub allow_any_subnet: bool,
     
     #[serde(rename="unencryptedPSK")]
-    unencrypted_psk: Option<String>,
+    pub unencrypted_psk: Option<String>,
     
     #[serde(rename="entityScope")]
-    entity_scope: Option<String>,
+    pub entity_scope: Option<String>,
     
     #[serde(rename="portVLANName")]
-    port_vlan_name: Option<String>,
-    priority: u64,
+    pub port_vlan_name: Option<String>,
+    
+    pub priority: u64,
     
     #[serde(rename="associatedIKEAuthenticationID")]
-    associated_ike_authentication_id: Option<String>,
+    pub associated_ike_authentication_id: Option<String>,
     
     #[serde(rename="associatedIKEAuthenticationType")]
-    associated_ike_authentication_type: Option<String>,
+    pub associated_ike_authentication_type: Option<String>,
     
     #[serde(rename="associatedIKEEncryptionProfileID")]
-    associated_ike_encryption_profile_id: Option<String>,
+    pub associated_ike_encryption_profile_id: Option<String>,
     
     #[serde(rename="associatedIKEGatewayProfileID")]
-    associated_ike_gateway_profile_id: Option<String>,
+    pub associated_ike_gateway_profile_id: Option<String>,
     
     #[serde(rename="associatedVLANID")]
-    associated_vlanid: Option<String>,
+    pub associated_vlanid: Option<String>,
     
     #[serde(rename="externalID")]
-    external_id: Option<String>,
+    pub external_id: Option<String>,
     
 }
 
 impl<'a> RestEntity<'a> for IKEGatewayConnection<'a> {
-    fn fetch(&mut self) -> Result<Response, BambouError> {
+    fn fetch(&mut self) -> Result<Response, Error> {
         match self._session {
-            Some(session) => session.fetch(self),
-            None => Err(BambouError::NoSession),
+            Some(session) => session.fetch_entity(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn save(&mut self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.save(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn delete(self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.delete(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn create_child<C>(&self, child: &mut C) -> Result<Response, Error>
+        where C: RestEntity<'a>
+    {
+        match self._session {
+            Some(session) => session.create_child(self, child),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -120,12 +151,12 @@ impl<'a> RestEntity<'a> for IKEGatewayConnection<'a> {
         self.id.as_ref().and_then(|id| Some(id.as_str()))
     }
 
-    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, BambouError>
+    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, Error>
         where R: RestEntity<'a>
     {
         match self._session {
             Some(session) => session.fetch_children(self, children),
-            None => Err(BambouError::NoSession),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -136,49 +167,25 @@ impl<'a> RestEntity<'a> for IKEGatewayConnection<'a> {
     fn set_session(&mut self, session: &'a Session) {
         self._session = Some(session);
     }
-
-    fn save(&mut self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.save(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn delete(self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.delete(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn create_child<C>(&self, child: &mut C) -> Result<Response, BambouError>
-        where C: RestEntity<'a>
-    {
-        match self._session {
-            Some(session) => session.create_child(self, child),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
 }
 
 impl<'a> IKEGatewayConnection<'a> {
 
-    fn fetch_metadatas(&self) -> Result<Vec<Metadata>, BambouError> {
+    pub fn fetch_metadatas(&self) -> Result<Vec<Metadata>, Error> {
         let mut metadatas = Vec::<Metadata>::new();
-        try!(self.fetch_children(&mut metadatas));
+        let _ = self.fetch_children(&mut metadatas)?;
         Ok(metadatas)
     }
 
-    fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, BambouError> {
+    pub fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, Error> {
         let mut globalmetadatas = Vec::<GlobalMetadata>::new();
-        try!(self.fetch_children(&mut globalmetadatas));
+        let _ = self.fetch_children(&mut globalmetadatas)?;
         Ok(globalmetadatas)
     }
 
-    fn fetch_subnets(&self) -> Result<Vec<Subnet>, BambouError> {
+    pub fn fetch_subnets(&self) -> Result<Vec<Subnet>, Error> {
         let mut subnets = Vec::<Subnet>::new();
-        try!(self.fetch_children(&mut subnets));
+        let _ = self.fetch_children(&mut subnets)?;
         Ok(subnets)
     }
 }

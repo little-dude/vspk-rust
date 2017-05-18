@@ -1,4 +1,5 @@
-// Copyright (c) 2015-2016, Nokia Inc
+// Copyright (c) 2015 Alcatel-Lucent, (c) 2016 Nokia
+//
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -24,8 +25,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-use bambou::{BambouError, RestEntity, Session, SessionConfig};
-use hyper::client::{Response};
+use bambou::{Error, RestEntity, Session};
+use reqwest::Response;
 use std::collections::BTreeMap;
 use serde_json;
 
@@ -42,9 +43,9 @@ pub use vcenter::VCenter;
 pub use vcenterhypervisor::VCenterHypervisor;
 pub use redirectiontarget::RedirectionTarget;
 pub use redundancygroup::RedundancyGroup;
+pub use performancemonitor::PerformanceMonitor;
 pub use certificate::Certificate;
 pub use metadata::Metadata;
-pub use metadatatag::MetadataTag;
 pub use networklayout::NetworkLayout;
 pub use keyservermember::KeyServerMember;
 pub use zfbautoassignment::ZFBAutoAssignment;
@@ -66,6 +67,8 @@ pub use globalmetadata::GlobalMetadata;
 pub use vm::VM;
 pub use vminterface::VMInterface;
 pub use cloudmgmtsystem::CloudMgmtSystem;
+pub use underlay::Underlay;
+pub use infrastructureaccessprofile::InfrastructureAccessProfile;
 pub use infrastructuregatewayprofile::InfrastructureGatewayProfile;
 pub use infrastructurevscprofile::InfrastructureVscProfile;
 pub use ingressaclentrytemplate::IngressACLEntryTemplate;
@@ -87,75 +90,111 @@ pub use vcentervrsconfig::VCenterVRSConfig;
 pub use user::User;
 pub use nsgateway::NSGateway;
 pub use nsgatewaytemplate::NSGatewayTemplate;
+pub use nsggroup::NSGGroup;
 pub use nsredundantgatewaygroup::NSRedundantGatewayGroup;
 pub use vsp::VSP;
 pub use staticroute::StaticRoute;
 pub use statscollectorinfo::StatsCollectorInfo;
 pub use subnet::Subnet;
+pub use ducgroup::DUCGroup;
 pub use multicastchannelmap::MultiCastChannelMap;
 pub use autodiscoveredgateway::AutoDiscoveredGateway;
-pub use externalappservice::ExternalAppService;
-pub use externalservice::ExternalService;
 pub use systemconfig::SystemConfig;
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct Me<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
     _session: Option<&'a Session>,
+
     #[serde(rename="ID")]
     id: Option<String>,
+
+    #[serde(rename = "APIKey")]
+    api_key: Option<String>,
+
     
-    #[serde(rename="APIKey")]
-    api_keypassword: Option<String>,
+    pub password: Option<String>,
     
     #[serde(rename="lastName")]
-    last_name: Option<String>,
+    pub last_name: Option<String>,
     
     #[serde(rename="lastUpdatedBy")]
-    last_updated_by: Option<String>,
+    pub last_updated_by: Option<String>,
     
     #[serde(rename="firstName")]
-    first_name: Option<String>,
-    disabled: bool,
+    pub first_name: Option<String>,
     
-    #[serde(rename="elasticSearchUIAddress")]
-    elastic_search_ui_address: Option<String>,
-    email: Option<String>,
+    pub disabled: bool,
+    
+    #[serde(rename="elasticSearchAddress")]
+    pub elastic_search_address: Option<String>,
+    
+    #[serde(rename="flowCollectionEnabled")]
+    pub flow_collection_enabled: bool,
+    
+    pub email: Option<String>,
     
     #[serde(rename="enterpriseID")]
-    enterprise_id: Option<String>,
+    pub enterprise_id: Option<String>,
     
     #[serde(rename="enterpriseName")]
-    enterprise_name: Option<String>,
+    pub enterprise_name: Option<String>,
     
     #[serde(rename="entityScope")]
-    entity_scope: Option<String>,
+    pub entity_scope: Option<String>,
     
     #[serde(rename="mobileNumber")]
-    mobile_number: Option<String>,
-    role: Option<String>,
+    pub mobile_number: Option<String>,
+    
+    pub role: Option<String>,
     
     #[serde(rename="userName")]
-    user_name: Option<String>,
+    pub user_name: Option<String>,
+    
+    #[serde(rename="statisticsEnabled")]
+    pub statistics_enabled: bool,
     
     #[serde(rename="avatarData")]
-    avatar_data: Option<String>,
+    pub avatar_data: Option<String>,
     
     #[serde(rename="avatarType")]
-    avatar_type: Option<String>,
+    pub avatar_type: Option<String>,
     
     #[serde(rename="externalID")]
-    external_id: Option<String>,
+    pub external_id: Option<String>,
     
 }
 
 impl<'a> RestEntity<'a> for Me<'a> {
-    fn fetch(&mut self) -> Result<Response, BambouError> {
+    fn fetch(&mut self) -> Result<Response, Error> {
         match self._session {
-            Some(session) => session.fetch(self),
-            None => Err(BambouError::NoSession),
+            Some(session) => session.fetch_entity(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn save(&mut self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.save(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn delete(self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.delete(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn create_child<C>(&self, child: &mut C) -> Result<Response, Error>
+        where C: RestEntity<'a>
+    {
+        match self._session {
+            Some(session) => session.create_child(self, child),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -168,19 +207,19 @@ impl<'a> RestEntity<'a> for Me<'a> {
     }
 
     fn is_root(&self) -> bool {
-        false
+        true
     }
 
     fn id(&self) -> Option<&str> {
         self.id.as_ref().and_then(|id| Some(id.as_str()))
     }
 
-    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, BambouError>
+    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, Error>
         where R: RestEntity<'a>
     {
         match self._session {
             Some(session) => session.fetch_children(self, children),
-            None => Err(BambouError::NoSession),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -191,433 +230,421 @@ impl<'a> RestEntity<'a> for Me<'a> {
     fn set_session(&mut self, session: &'a Session) {
         self._session = Some(session);
     }
-
-    fn save(&mut self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.save(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn delete(self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.delete(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn create_child<C>(&self, child: &mut C) -> Result<Response, BambouError>
-        where C: RestEntity<'a>
-    {
-        match self._session {
-            Some(session) => session.create_child(self, child),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
 }
 
 impl<'a> Me<'a> {
 
-    fn fetch_l2domains(&self) -> Result<Vec<L2Domain>, BambouError> {
+    pub fn fetch_l2domains(&self) -> Result<Vec<L2Domain>, Error> {
         let mut l2domains = Vec::<L2Domain>::new();
-        try!(self.fetch_children(&mut l2domains));
+        let _ = self.fetch_children(&mut l2domains)?;
         Ok(l2domains)
     }
 
-    fn fetch_eamconfigs(&self) -> Result<Vec<VCenterEAMConfig>, BambouError> {
+    pub fn fetch_eamconfigs(&self) -> Result<Vec<VCenterEAMConfig>, Error> {
         let mut eamconfigs = Vec::<VCenterEAMConfig>::new();
-        try!(self.fetch_children(&mut eamconfigs));
+        let _ = self.fetch_children(&mut eamconfigs)?;
         Ok(eamconfigs)
     }
 
-    fn fetch_ratelimiters(&self) -> Result<Vec<RateLimiter>, BambouError> {
+    pub fn fetch_ratelimiters(&self) -> Result<Vec<RateLimiter>, Error> {
         let mut ratelimiters = Vec::<RateLimiter>::new();
-        try!(self.fetch_children(&mut ratelimiters));
+        let _ = self.fetch_children(&mut ratelimiters)?;
         Ok(ratelimiters)
     }
 
-    fn fetch_gateways(&self) -> Result<Vec<Gateway>, BambouError> {
+    pub fn fetch_gateways(&self) -> Result<Vec<Gateway>, Error> {
         let mut gateways = Vec::<Gateway>::new();
-        try!(self.fetch_children(&mut gateways));
+        let _ = self.fetch_children(&mut gateways)?;
         Ok(gateways)
     }
 
-    fn fetch_gatewaytemplates(&self) -> Result<Vec<GatewayTemplate>, BambouError> {
+    pub fn fetch_gatewaytemplates(&self) -> Result<Vec<GatewayTemplate>, Error> {
         let mut gatewaytemplates = Vec::<GatewayTemplate>::new();
-        try!(self.fetch_children(&mut gatewaytemplates));
+        let _ = self.fetch_children(&mut gatewaytemplates)?;
         Ok(gatewaytemplates)
     }
 
-    fn fetch_patmappers(&self) -> Result<Vec<PATMapper>, BambouError> {
+    pub fn fetch_patmappers(&self) -> Result<Vec<PATMapper>, Error> {
         let mut patmappers = Vec::<PATMapper>::new();
-        try!(self.fetch_children(&mut patmappers));
+        let _ = self.fetch_children(&mut patmappers)?;
         Ok(patmappers)
     }
 
-    fn fetch_patnatpools(&self) -> Result<Vec<PATNATPool>, BambouError> {
+    pub fn fetch_patnatpools(&self) -> Result<Vec<PATNATPool>, Error> {
         let mut patnatpools = Vec::<PATNATPool>::new();
-        try!(self.fetch_children(&mut patnatpools));
+        let _ = self.fetch_children(&mut patnatpools)?;
         Ok(patnatpools)
     }
 
-    fn fetch_tcas(&self) -> Result<Vec<TCA>, BambouError> {
+    pub fn fetch_tcas(&self) -> Result<Vec<TCA>, Error> {
         let mut tcas = Vec::<TCA>::new();
-        try!(self.fetch_children(&mut tcas));
+        let _ = self.fetch_children(&mut tcas)?;
         Ok(tcas)
     }
 
-    fn fetch_vcenters(&self) -> Result<Vec<VCenter>, BambouError> {
+    pub fn fetch_vcenters(&self) -> Result<Vec<VCenter>, Error> {
         let mut vcenters = Vec::<VCenter>::new();
-        try!(self.fetch_children(&mut vcenters));
+        let _ = self.fetch_children(&mut vcenters)?;
         Ok(vcenters)
     }
 
-    fn fetch_vcenterhypervisors(&self) -> Result<Vec<VCenterHypervisor>, BambouError> {
+    pub fn fetch_vcenterhypervisors(&self) -> Result<Vec<VCenterHypervisor>, Error> {
         let mut vcenterhypervisors = Vec::<VCenterHypervisor>::new();
-        try!(self.fetch_children(&mut vcenterhypervisors));
+        let _ = self.fetch_children(&mut vcenterhypervisors)?;
         Ok(vcenterhypervisors)
     }
 
-    fn fetch_redirectiontargets(&self) -> Result<Vec<RedirectionTarget>, BambouError> {
+    pub fn fetch_redirectiontargets(&self) -> Result<Vec<RedirectionTarget>, Error> {
         let mut redirectiontargets = Vec::<RedirectionTarget>::new();
-        try!(self.fetch_children(&mut redirectiontargets));
+        let _ = self.fetch_children(&mut redirectiontargets)?;
         Ok(redirectiontargets)
     }
 
-    fn fetch_redundancygroups(&self) -> Result<Vec<RedundancyGroup>, BambouError> {
+    pub fn fetch_redundancygroups(&self) -> Result<Vec<RedundancyGroup>, Error> {
         let mut redundancygroups = Vec::<RedundancyGroup>::new();
-        try!(self.fetch_children(&mut redundancygroups));
+        let _ = self.fetch_children(&mut redundancygroups)?;
         Ok(redundancygroups)
     }
 
-    fn fetch_certificates(&self) -> Result<Vec<Certificate>, BambouError> {
+    pub fn fetch_performancemonitors(&self) -> Result<Vec<PerformanceMonitor>, Error> {
+        let mut performancemonitors = Vec::<PerformanceMonitor>::new();
+        let _ = self.fetch_children(&mut performancemonitors)?;
+        Ok(performancemonitors)
+    }
+
+    pub fn fetch_certificates(&self) -> Result<Vec<Certificate>, Error> {
         let mut certificates = Vec::<Certificate>::new();
-        try!(self.fetch_children(&mut certificates));
+        let _ = self.fetch_children(&mut certificates)?;
         Ok(certificates)
     }
 
-    fn fetch_metadatas(&self) -> Result<Vec<Metadata>, BambouError> {
+    pub fn fetch_metadatas(&self) -> Result<Vec<Metadata>, Error> {
         let mut metadatas = Vec::<Metadata>::new();
-        try!(self.fetch_children(&mut metadatas));
+        let _ = self.fetch_children(&mut metadatas)?;
         Ok(metadatas)
     }
 
-    fn fetch_metadatatags(&self) -> Result<Vec<MetadataTag>, BambouError> {
-        let mut metadatatags = Vec::<MetadataTag>::new();
-        try!(self.fetch_children(&mut metadatatags));
-        Ok(metadatatags)
-    }
-
-    fn fetch_networklayout(&self) -> Result<Vec<NetworkLayout>, BambouError> {
+    pub fn fetch_networklayout(&self) -> Result<Vec<NetworkLayout>, Error> {
         let mut networklayout = Vec::<NetworkLayout>::new();
-        try!(self.fetch_children(&mut networklayout));
+        let _ = self.fetch_children(&mut networklayout)?;
         Ok(networklayout)
     }
 
-    fn fetch_keyservermembers(&self) -> Result<Vec<KeyServerMember>, BambouError> {
+    pub fn fetch_keyservermembers(&self) -> Result<Vec<KeyServerMember>, Error> {
         let mut keyservermembers = Vec::<KeyServerMember>::new();
-        try!(self.fetch_children(&mut keyservermembers));
+        let _ = self.fetch_children(&mut keyservermembers)?;
         Ok(keyservermembers)
     }
 
-    fn fetch_zfbautoassignments(&self) -> Result<Vec<ZFBAutoAssignment>, BambouError> {
+    pub fn fetch_zfbautoassignments(&self) -> Result<Vec<ZFBAutoAssignment>, Error> {
         let mut zfbautoassignments = Vec::<ZFBAutoAssignment>::new();
-        try!(self.fetch_children(&mut zfbautoassignments));
+        let _ = self.fetch_children(&mut zfbautoassignments)?;
         Ok(zfbautoassignments)
     }
 
-    fn fetch_zfbrequests(&self) -> Result<Vec<ZFBRequest>, BambouError> {
+    pub fn fetch_zfbrequests(&self) -> Result<Vec<ZFBRequest>, Error> {
         let mut zfbrequests = Vec::<ZFBRequest>::new();
-        try!(self.fetch_children(&mut zfbrequests));
+        let _ = self.fetch_children(&mut zfbrequests)?;
         Ok(zfbrequests)
     }
 
-    fn fetch_bgpneighbors(&self) -> Result<Vec<BGPNeighbor>, BambouError> {
+    pub fn fetch_bgpneighbors(&self) -> Result<Vec<BGPNeighbor>, Error> {
         let mut bgpneighbors = Vec::<BGPNeighbor>::new();
-        try!(self.fetch_children(&mut bgpneighbors));
+        let _ = self.fetch_children(&mut bgpneighbors)?;
         Ok(bgpneighbors)
     }
 
-    fn fetch_bgpprofiles(&self) -> Result<Vec<BGPProfile>, BambouError> {
+    pub fn fetch_bgpprofiles(&self) -> Result<Vec<BGPProfile>, Error> {
         let mut bgpprofiles = Vec::<BGPProfile>::new();
-        try!(self.fetch_children(&mut bgpprofiles));
+        let _ = self.fetch_children(&mut bgpprofiles)?;
         Ok(bgpprofiles)
     }
 
-    fn fetch_egressaclentrytemplates(&self) -> Result<Vec<EgressACLEntryTemplate>, BambouError> {
+    pub fn fetch_egressaclentrytemplates(&self) -> Result<Vec<EgressACLEntryTemplate>, Error> {
         let mut egressaclentrytemplates = Vec::<EgressACLEntryTemplate>::new();
-        try!(self.fetch_children(&mut egressaclentrytemplates));
+        let _ = self.fetch_children(&mut egressaclentrytemplates)?;
         Ok(egressaclentrytemplates)
     }
 
-    fn fetch_egressacltemplates(&self) -> Result<Vec<EgressACLTemplate>, BambouError> {
+    pub fn fetch_egressacltemplates(&self) -> Result<Vec<EgressACLTemplate>, Error> {
         let mut egressacltemplates = Vec::<EgressACLTemplate>::new();
-        try!(self.fetch_children(&mut egressacltemplates));
+        let _ = self.fetch_children(&mut egressacltemplates)?;
         Ok(egressacltemplates)
     }
 
-    fn fetch_egressdomainfloatingipacltemplates(&self) -> Result<Vec<DomainFIPAclTemplate>, BambouError> {
+    pub fn fetch_egressdomainfloatingipacltemplates(&self) -> Result<Vec<DomainFIPAclTemplate>, Error> {
         let mut egressdomainfloatingipacltemplates = Vec::<DomainFIPAclTemplate>::new();
-        try!(self.fetch_children(&mut egressdomainfloatingipacltemplates));
+        let _ = self.fetch_children(&mut egressdomainfloatingipacltemplates)?;
         Ok(egressdomainfloatingipacltemplates)
     }
 
-    fn fetch_egressfloatingipacltemplates(&self) -> Result<Vec<FloatingIPACLTemplate>, BambouError> {
+    pub fn fetch_egressfloatingipacltemplates(&self) -> Result<Vec<FloatingIPACLTemplate>, Error> {
         let mut egressfloatingipacltemplates = Vec::<FloatingIPACLTemplate>::new();
-        try!(self.fetch_children(&mut egressfloatingipacltemplates));
+        let _ = self.fetch_children(&mut egressfloatingipacltemplates)?;
         Ok(egressfloatingipacltemplates)
     }
 
-    fn fetch_egressqospolicies(&self) -> Result<Vec<EgressQOSPolicy>, BambouError> {
+    pub fn fetch_egressqospolicies(&self) -> Result<Vec<EgressQOSPolicy>, Error> {
         let mut egressqospolicies = Vec::<EgressQOSPolicy>::new();
-        try!(self.fetch_children(&mut egressqospolicies));
+        let _ = self.fetch_children(&mut egressqospolicies)?;
         Ok(egressqospolicies)
     }
 
-    fn fetch_sharednetworkresources(&self) -> Result<Vec<SharedNetworkResource>, BambouError> {
+    pub fn fetch_sharednetworkresources(&self) -> Result<Vec<SharedNetworkResource>, Error> {
         let mut sharednetworkresources = Vec::<SharedNetworkResource>::new();
-        try!(self.fetch_children(&mut sharednetworkresources));
+        let _ = self.fetch_children(&mut sharednetworkresources)?;
         Ok(sharednetworkresources)
     }
 
-    fn fetch_licenses(&self) -> Result<Vec<License>, BambouError> {
+    pub fn fetch_licenses(&self) -> Result<Vec<License>, Error> {
         let mut licenses = Vec::<License>::new();
-        try!(self.fetch_children(&mut licenses));
+        let _ = self.fetch_children(&mut licenses)?;
         Ok(licenses)
     }
 
-    fn fetch_licensestatus(&self) -> Result<Vec<LicenseStatus>, BambouError> {
+    pub fn fetch_licensestatus(&self) -> Result<Vec<LicenseStatus>, Error> {
         let mut licensestatus = Vec::<LicenseStatus>::new();
-        try!(self.fetch_children(&mut licensestatus));
+        let _ = self.fetch_children(&mut licensestatus)?;
         Ok(licensestatus)
     }
 
-    fn fetch_mirrordestinations(&self) -> Result<Vec<MirrorDestination>, BambouError> {
+    pub fn fetch_mirrordestinations(&self) -> Result<Vec<MirrorDestination>, Error> {
         let mut mirrordestinations = Vec::<MirrorDestination>::new();
-        try!(self.fetch_children(&mut mirrordestinations));
+        let _ = self.fetch_children(&mut mirrordestinations)?;
         Ok(mirrordestinations)
     }
 
-    fn fetch_sites(&self) -> Result<Vec<SiteInfo>, BambouError> {
+    pub fn fetch_sites(&self) -> Result<Vec<SiteInfo>, Error> {
         let mut sites = Vec::<SiteInfo>::new();
-        try!(self.fetch_children(&mut sites));
+        let _ = self.fetch_children(&mut sites)?;
         Ok(sites)
     }
 
-    fn fetch_floatingips(&self) -> Result<Vec<FloatingIp>, BambouError> {
+    pub fn fetch_floatingips(&self) -> Result<Vec<FloatingIp>, Error> {
         let mut floatingips = Vec::<FloatingIp>::new();
-        try!(self.fetch_children(&mut floatingips));
+        let _ = self.fetch_children(&mut floatingips)?;
         Ok(floatingips)
     }
 
-    fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, BambouError> {
+    pub fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, Error> {
         let mut globalmetadatas = Vec::<GlobalMetadata>::new();
-        try!(self.fetch_children(&mut globalmetadatas));
+        let _ = self.fetch_children(&mut globalmetadatas)?;
         Ok(globalmetadatas)
     }
 
-    fn fetch_vms(&self) -> Result<Vec<VM>, BambouError> {
+    pub fn fetch_vms(&self) -> Result<Vec<VM>, Error> {
         let mut vms = Vec::<VM>::new();
-        try!(self.fetch_children(&mut vms));
+        let _ = self.fetch_children(&mut vms)?;
         Ok(vms)
     }
 
-    fn fetch_vminterfaces(&self) -> Result<Vec<VMInterface>, BambouError> {
+    pub fn fetch_vminterfaces(&self) -> Result<Vec<VMInterface>, Error> {
         let mut vminterfaces = Vec::<VMInterface>::new();
-        try!(self.fetch_children(&mut vminterfaces));
+        let _ = self.fetch_children(&mut vminterfaces)?;
         Ok(vminterfaces)
     }
 
-    fn fetch_cms(&self) -> Result<Vec<CloudMgmtSystem>, BambouError> {
+    pub fn fetch_cms(&self) -> Result<Vec<CloudMgmtSystem>, Error> {
         let mut cms = Vec::<CloudMgmtSystem>::new();
-        try!(self.fetch_children(&mut cms));
+        let _ = self.fetch_children(&mut cms)?;
         Ok(cms)
     }
 
-    fn fetch_infrastructuregatewayprofiles(&self) -> Result<Vec<InfrastructureGatewayProfile>, BambouError> {
+    pub fn fetch_underlays(&self) -> Result<Vec<Underlay>, Error> {
+        let mut underlays = Vec::<Underlay>::new();
+        let _ = self.fetch_children(&mut underlays)?;
+        Ok(underlays)
+    }
+
+    pub fn fetch_infrastructureaccessprofiles(&self) -> Result<Vec<InfrastructureAccessProfile>, Error> {
+        let mut infrastructureaccessprofiles = Vec::<InfrastructureAccessProfile>::new();
+        let _ = self.fetch_children(&mut infrastructureaccessprofiles)?;
+        Ok(infrastructureaccessprofiles)
+    }
+
+    pub fn fetch_infrastructuregatewayprofiles(&self) -> Result<Vec<InfrastructureGatewayProfile>, Error> {
         let mut infrastructuregatewayprofiles = Vec::<InfrastructureGatewayProfile>::new();
-        try!(self.fetch_children(&mut infrastructuregatewayprofiles));
+        let _ = self.fetch_children(&mut infrastructuregatewayprofiles)?;
         Ok(infrastructuregatewayprofiles)
     }
 
-    fn fetch_infrastructurevscprofiles(&self) -> Result<Vec<InfrastructureVscProfile>, BambouError> {
+    pub fn fetch_infrastructurevscprofiles(&self) -> Result<Vec<InfrastructureVscProfile>, Error> {
         let mut infrastructurevscprofiles = Vec::<InfrastructureVscProfile>::new();
-        try!(self.fetch_children(&mut infrastructurevscprofiles));
+        let _ = self.fetch_children(&mut infrastructurevscprofiles)?;
         Ok(infrastructurevscprofiles)
     }
 
-    fn fetch_ingressaclentrytemplates(&self) -> Result<Vec<IngressACLEntryTemplate>, BambouError> {
+    pub fn fetch_ingressaclentrytemplates(&self) -> Result<Vec<IngressACLEntryTemplate>, Error> {
         let mut ingressaclentrytemplates = Vec::<IngressACLEntryTemplate>::new();
-        try!(self.fetch_children(&mut ingressaclentrytemplates));
+        let _ = self.fetch_children(&mut ingressaclentrytemplates)?;
         Ok(ingressaclentrytemplates)
     }
 
-    fn fetch_ingressacltemplates(&self) -> Result<Vec<IngressACLTemplate>, BambouError> {
+    pub fn fetch_ingressacltemplates(&self) -> Result<Vec<IngressACLTemplate>, Error> {
         let mut ingressacltemplates = Vec::<IngressACLTemplate>::new();
-        try!(self.fetch_children(&mut ingressacltemplates));
+        let _ = self.fetch_children(&mut ingressacltemplates)?;
         Ok(ingressacltemplates)
     }
 
-    fn fetch_ingressadvfwdentrytemplates(&self) -> Result<Vec<IngressAdvFwdEntryTemplate>, BambouError> {
+    pub fn fetch_ingressadvfwdentrytemplates(&self) -> Result<Vec<IngressAdvFwdEntryTemplate>, Error> {
         let mut ingressadvfwdentrytemplates = Vec::<IngressAdvFwdEntryTemplate>::new();
-        try!(self.fetch_children(&mut ingressadvfwdentrytemplates));
+        let _ = self.fetch_children(&mut ingressadvfwdentrytemplates)?;
         Ok(ingressadvfwdentrytemplates)
     }
 
-    fn fetch_enterprises(&self) -> Result<Vec<Enterprise>, BambouError> {
+    pub fn fetch_enterprises(&self) -> Result<Vec<Enterprise>, Error> {
         let mut enterprises = Vec::<Enterprise>::new();
-        try!(self.fetch_children(&mut enterprises));
+        let _ = self.fetch_children(&mut enterprises)?;
         Ok(enterprises)
     }
 
-    fn fetch_enterpriseprofiles(&self) -> Result<Vec<EnterpriseProfile>, BambouError> {
+    pub fn fetch_enterpriseprofiles(&self) -> Result<Vec<EnterpriseProfile>, Error> {
         let mut enterpriseprofiles = Vec::<EnterpriseProfile>::new();
-        try!(self.fetch_children(&mut enterpriseprofiles));
+        let _ = self.fetch_children(&mut enterpriseprofiles)?;
         Ok(enterpriseprofiles)
     }
 
-    fn fetch_jobs(&self) -> Result<Vec<Job>, BambouError> {
+    pub fn fetch_jobs(&self) -> Result<Vec<Job>, Error> {
         let mut jobs = Vec::<Job>::new();
-        try!(self.fetch_children(&mut jobs));
+        let _ = self.fetch_children(&mut jobs)?;
         Ok(jobs)
     }
 
-    fn fetch_policygroups(&self) -> Result<Vec<PolicyGroup>, BambouError> {
+    pub fn fetch_policygroups(&self) -> Result<Vec<PolicyGroup>, Error> {
         let mut policygroups = Vec::<PolicyGroup>::new();
-        try!(self.fetch_children(&mut policygroups));
+        let _ = self.fetch_children(&mut policygroups)?;
         Ok(policygroups)
     }
 
-    fn fetch_domains(&self) -> Result<Vec<Domain>, BambouError> {
+    pub fn fetch_domains(&self) -> Result<Vec<Domain>, Error> {
         let mut domains = Vec::<Domain>::new();
-        try!(self.fetch_children(&mut domains));
+        let _ = self.fetch_children(&mut domains)?;
         Ok(domains)
     }
 
-    fn fetch_zones(&self) -> Result<Vec<Zone>, BambouError> {
+    pub fn fetch_zones(&self) -> Result<Vec<Zone>, Error> {
         let mut zones = Vec::<Zone>::new();
-        try!(self.fetch_children(&mut zones));
+        let _ = self.fetch_children(&mut zones)?;
         Ok(zones)
     }
 
-    fn fetch_containers(&self) -> Result<Vec<Container>, BambouError> {
+    pub fn fetch_containers(&self) -> Result<Vec<Container>, Error> {
         let mut containers = Vec::<Container>::new();
-        try!(self.fetch_children(&mut containers));
+        let _ = self.fetch_children(&mut containers)?;
         Ok(containers)
     }
 
-    fn fetch_containerinterfaces(&self) -> Result<Vec<ContainerInterface>, BambouError> {
+    pub fn fetch_containerinterfaces(&self) -> Result<Vec<ContainerInterface>, Error> {
         let mut containerinterfaces = Vec::<ContainerInterface>::new();
-        try!(self.fetch_children(&mut containerinterfaces));
+        let _ = self.fetch_children(&mut containerinterfaces)?;
         Ok(containerinterfaces)
     }
 
-    fn fetch_hostinterfaces(&self) -> Result<Vec<HostInterface>, BambouError> {
+    pub fn fetch_hostinterfaces(&self) -> Result<Vec<HostInterface>, Error> {
         let mut hostinterfaces = Vec::<HostInterface>::new();
-        try!(self.fetch_children(&mut hostinterfaces));
+        let _ = self.fetch_children(&mut hostinterfaces)?;
         Ok(hostinterfaces)
     }
 
-    fn fetch_routingpolicies(&self) -> Result<Vec<RoutingPolicy>, BambouError> {
+    pub fn fetch_routingpolicies(&self) -> Result<Vec<RoutingPolicy>, Error> {
         let mut routingpolicies = Vec::<RoutingPolicy>::new();
-        try!(self.fetch_children(&mut routingpolicies));
+        let _ = self.fetch_children(&mut routingpolicies)?;
         Ok(routingpolicies)
     }
 
-    fn fetch_uplinkroutedistinguishers(&self) -> Result<Vec<UplinkRD>, BambouError> {
+    pub fn fetch_uplinkroutedistinguishers(&self) -> Result<Vec<UplinkRD>, Error> {
         let mut uplinkroutedistinguishers = Vec::<UplinkRD>::new();
-        try!(self.fetch_children(&mut uplinkroutedistinguishers));
+        let _ = self.fetch_children(&mut uplinkroutedistinguishers)?;
         Ok(uplinkroutedistinguishers)
     }
 
-    fn fetch_applicationservices(&self) -> Result<Vec<ApplicationService>, BambouError> {
+    pub fn fetch_applicationservices(&self) -> Result<Vec<ApplicationService>, Error> {
         let mut applicationservices = Vec::<ApplicationService>::new();
-        try!(self.fetch_children(&mut applicationservices));
+        let _ = self.fetch_children(&mut applicationservices)?;
         Ok(applicationservices)
     }
 
-    fn fetch_vrsconfigs(&self) -> Result<Vec<VCenterVRSConfig>, BambouError> {
+    pub fn fetch_vrsconfigs(&self) -> Result<Vec<VCenterVRSConfig>, Error> {
         let mut vrsconfigs = Vec::<VCenterVRSConfig>::new();
-        try!(self.fetch_children(&mut vrsconfigs));
+        let _ = self.fetch_children(&mut vrsconfigs)?;
         Ok(vrsconfigs)
     }
 
-    fn fetch_users(&self) -> Result<Vec<User>, BambouError> {
+    pub fn fetch_users(&self) -> Result<Vec<User>, Error> {
         let mut users = Vec::<User>::new();
-        try!(self.fetch_children(&mut users));
+        let _ = self.fetch_children(&mut users)?;
         Ok(users)
     }
 
-    fn fetch_nsgateways(&self) -> Result<Vec<NSGateway>, BambouError> {
+    pub fn fetch_nsgateways(&self) -> Result<Vec<NSGateway>, Error> {
         let mut nsgateways = Vec::<NSGateway>::new();
-        try!(self.fetch_children(&mut nsgateways));
+        let _ = self.fetch_children(&mut nsgateways)?;
         Ok(nsgateways)
     }
 
-    fn fetch_nsgatewaytemplates(&self) -> Result<Vec<NSGatewayTemplate>, BambouError> {
+    pub fn fetch_nsgatewaytemplates(&self) -> Result<Vec<NSGatewayTemplate>, Error> {
         let mut nsgatewaytemplates = Vec::<NSGatewayTemplate>::new();
-        try!(self.fetch_children(&mut nsgatewaytemplates));
+        let _ = self.fetch_children(&mut nsgatewaytemplates)?;
         Ok(nsgatewaytemplates)
     }
 
-    fn fetch_nsgredundancygroups(&self) -> Result<Vec<NSRedundantGatewayGroup>, BambouError> {
+    pub fn fetch_nsggroups(&self) -> Result<Vec<NSGGroup>, Error> {
+        let mut nsggroups = Vec::<NSGGroup>::new();
+        let _ = self.fetch_children(&mut nsggroups)?;
+        Ok(nsggroups)
+    }
+
+    pub fn fetch_nsgredundancygroups(&self) -> Result<Vec<NSRedundantGatewayGroup>, Error> {
         let mut nsgredundancygroups = Vec::<NSRedundantGatewayGroup>::new();
-        try!(self.fetch_children(&mut nsgredundancygroups));
+        let _ = self.fetch_children(&mut nsgredundancygroups)?;
         Ok(nsgredundancygroups)
     }
 
-    fn fetch_vsps(&self) -> Result<Vec<VSP>, BambouError> {
+    pub fn fetch_vsps(&self) -> Result<Vec<VSP>, Error> {
         let mut vsps = Vec::<VSP>::new();
-        try!(self.fetch_children(&mut vsps));
+        let _ = self.fetch_children(&mut vsps)?;
         Ok(vsps)
     }
 
-    fn fetch_staticroutes(&self) -> Result<Vec<StaticRoute>, BambouError> {
+    pub fn fetch_staticroutes(&self) -> Result<Vec<StaticRoute>, Error> {
         let mut staticroutes = Vec::<StaticRoute>::new();
-        try!(self.fetch_children(&mut staticroutes));
+        let _ = self.fetch_children(&mut staticroutes)?;
         Ok(staticroutes)
     }
 
-    fn fetch_statisticscollector(&self) -> Result<Vec<StatsCollectorInfo>, BambouError> {
+    pub fn fetch_statisticscollector(&self) -> Result<Vec<StatsCollectorInfo>, Error> {
         let mut statisticscollector = Vec::<StatsCollectorInfo>::new();
-        try!(self.fetch_children(&mut statisticscollector));
+        let _ = self.fetch_children(&mut statisticscollector)?;
         Ok(statisticscollector)
     }
 
-    fn fetch_subnets(&self) -> Result<Vec<Subnet>, BambouError> {
+    pub fn fetch_subnets(&self) -> Result<Vec<Subnet>, Error> {
         let mut subnets = Vec::<Subnet>::new();
-        try!(self.fetch_children(&mut subnets));
+        let _ = self.fetch_children(&mut subnets)?;
         Ok(subnets)
     }
 
-    fn fetch_multicastchannelmaps(&self) -> Result<Vec<MultiCastChannelMap>, BambouError> {
+    pub fn fetch_ducgroups(&self) -> Result<Vec<DUCGroup>, Error> {
+        let mut ducgroups = Vec::<DUCGroup>::new();
+        let _ = self.fetch_children(&mut ducgroups)?;
+        Ok(ducgroups)
+    }
+
+    pub fn fetch_multicastchannelmaps(&self) -> Result<Vec<MultiCastChannelMap>, Error> {
         let mut multicastchannelmaps = Vec::<MultiCastChannelMap>::new();
-        try!(self.fetch_children(&mut multicastchannelmaps));
+        let _ = self.fetch_children(&mut multicastchannelmaps)?;
         Ok(multicastchannelmaps)
     }
 
-    fn fetch_autodiscoveredgateways(&self) -> Result<Vec<AutoDiscoveredGateway>, BambouError> {
+    pub fn fetch_autodiscoveredgateways(&self) -> Result<Vec<AutoDiscoveredGateway>, Error> {
         let mut autodiscoveredgateways = Vec::<AutoDiscoveredGateway>::new();
-        try!(self.fetch_children(&mut autodiscoveredgateways));
+        let _ = self.fetch_children(&mut autodiscoveredgateways)?;
         Ok(autodiscoveredgateways)
     }
 
-    fn fetch_externalappservices(&self) -> Result<Vec<ExternalAppService>, BambouError> {
-        let mut externalappservices = Vec::<ExternalAppService>::new();
-        try!(self.fetch_children(&mut externalappservices));
-        Ok(externalappservices)
-    }
-
-    fn fetch_externalservices(&self) -> Result<Vec<ExternalService>, BambouError> {
-        let mut externalservices = Vec::<ExternalService>::new();
-        try!(self.fetch_children(&mut externalservices));
-        Ok(externalservices)
-    }
-
-    fn fetch_systemconfigs(&self) -> Result<Vec<SystemConfig>, BambouError> {
+    pub fn fetch_systemconfigs(&self) -> Result<Vec<SystemConfig>, Error> {
         let mut systemconfigs = Vec::<SystemConfig>::new();
-        try!(self.fetch_children(&mut systemconfigs));
+        let _ = self.fetch_children(&mut systemconfigs)?;
         Ok(systemconfigs)
     }
 }

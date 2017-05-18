@@ -11,8 +11,8 @@ keywords = ["rest"]
 license-file = "LICENSE"
 
 [dependencies]
-hyper = "*"
-serde = "0.8"
-serde_json = "0.8"
-serde_derive = "0.8"
+reqwest= "*"
+serde = "*"
+serde_json = "*"
+serde_derive = "*"
 bambou = { git = "https://github.com/little-dude/bambou-rs" }

@@ -1,4 +1,5 @@
-// Copyright (c) 2015-2016, Nokia Inc
+// Copyright (c) 2015 Alcatel-Lucent, (c) 2016 Nokia
+//
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -24,8 +25,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-use bambou::{BambouError, RestEntity, Session, SessionConfig};
-use hyper::client::{Response};
+use bambou::{Error, RestEntity, Session};
+use reqwest::Response;
 use std::collections::BTreeMap;
 use serde_json;
 
@@ -34,66 +35,95 @@ pub use demarcationservice::DemarcationService;
 pub use metadata::Metadata;
 pub use nexthopaddress::NextHopAddress;
 pub use globalmetadata::GlobalMetadata;
+pub use csnatpool::CSNATPool;
+pub use psnatpool::PSNATPool;
 pub use overlayaddresspool::OverlayAddressPool;
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct Link<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
     _session: Option<&'a Session>,
+
     #[serde(rename="ID")]
     id: Option<String>,
-    
+
     #[serde(rename="parentID")]
     parent_id: Option<String>,
+
     #[serde(rename="parentType")]
     parent_type: Option<String>,
+
     owner: Option<String>,
+
     
     #[serde(rename="lastUpdatedBy")]
-    last_updated_by: Option<String>,
+    pub last_updated_by: Option<String>,
     
     #[serde(rename="acceptanceCriteria")]
-    acceptance_criteria: Option<String>,
+    pub acceptance_criteria: Option<String>,
     
     #[serde(rename="readOnly")]
-    read_only: bool,
+    pub read_only: bool,
     
     #[serde(rename="entityScope")]
-    entity_scope: Option<String>,
+    pub entity_scope: Option<String>,
     
     #[serde(rename="associatedDestinationID")]
-    associated_destination_id: Option<String>,
+    pub associated_destination_id: Option<String>,
     
     #[serde(rename="associatedDestinationName")]
-    associated_destination_name: Option<String>,
+    pub associated_destination_name: Option<String>,
     
     #[serde(rename="associatedDestinationType")]
-    associated_destination_type: Option<String>,
+    pub associated_destination_type: Option<String>,
     
     #[serde(rename="associatedSourceID")]
-    associated_source_id: Option<String>,
+    pub associated_source_id: Option<String>,
     
     #[serde(rename="associatedSourceName")]
-    associated_source_name: Option<String>,
+    pub associated_source_name: Option<String>,
     
     #[serde(rename="associatedSourceType")]
-    associated_source_type: Option<String>,
+    pub associated_source_type: Option<String>,
     
     #[serde(rename="externalID")]
-    external_id: Option<String>,
+    pub external_id: Option<String>,
     
     #[serde(rename="type")]
-    type_: Option<String>,
+    pub type_: Option<String>,
     
 }
 
 impl<'a> RestEntity<'a> for Link<'a> {
-    fn fetch(&mut self) -> Result<Response, BambouError> {
+    fn fetch(&mut self) -> Result<Response, Error> {
         match self._session {
-            Some(session) => session.fetch(self),
-            None => Err(BambouError::NoSession),
+            Some(session) => session.fetch_entity(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn save(&mut self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.save(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn delete(self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.delete(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn create_child<C>(&self, child: &mut C) -> Result<Response, Error>
+        where C: RestEntity<'a>
+    {
+        match self._session {
+            Some(session) => session.create_child(self, child),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -113,12 +143,12 @@ impl<'a> RestEntity<'a> for Link<'a> {
         self.id.as_ref().and_then(|id| Some(id.as_str()))
     }
 
-    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, BambouError>
+    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, Error>
         where R: RestEntity<'a>
     {
         match self._session {
             Some(session) => session.fetch_children(self, children),
-            None => Err(BambouError::NoSession),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -129,61 +159,49 @@ impl<'a> RestEntity<'a> for Link<'a> {
     fn set_session(&mut self, session: &'a Session) {
         self._session = Some(session);
     }
-
-    fn save(&mut self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.save(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn delete(self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.delete(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn create_child<C>(&self, child: &mut C) -> Result<Response, BambouError>
-        where C: RestEntity<'a>
-    {
-        match self._session {
-            Some(session) => session.create_child(self, child),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
 }
 
 impl<'a> Link<'a> {
 
-    fn fetch_demarcationservices(&self) -> Result<Vec<DemarcationService>, BambouError> {
+    pub fn fetch_demarcationservices(&self) -> Result<Vec<DemarcationService>, Error> {
         let mut demarcationservices = Vec::<DemarcationService>::new();
-        try!(self.fetch_children(&mut demarcationservices));
+        let _ = self.fetch_children(&mut demarcationservices)?;
         Ok(demarcationservices)
     }
 
-    fn fetch_metadatas(&self) -> Result<Vec<Metadata>, BambouError> {
+    pub fn fetch_metadatas(&self) -> Result<Vec<Metadata>, Error> {
         let mut metadatas = Vec::<Metadata>::new();
-        try!(self.fetch_children(&mut metadatas));
+        let _ = self.fetch_children(&mut metadatas)?;
         Ok(metadatas)
     }
 
-    fn fetch_nexthopaddress(&self) -> Result<Vec<NextHopAddress>, BambouError> {
+    pub fn fetch_nexthopaddress(&self) -> Result<Vec<NextHopAddress>, Error> {
         let mut nexthopaddress = Vec::<NextHopAddress>::new();
-        try!(self.fetch_children(&mut nexthopaddress));
+        let _ = self.fetch_children(&mut nexthopaddress)?;
         Ok(nexthopaddress)
     }
 
-    fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, BambouError> {
+    pub fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, Error> {
         let mut globalmetadatas = Vec::<GlobalMetadata>::new();
-        try!(self.fetch_children(&mut globalmetadatas));
+        let _ = self.fetch_children(&mut globalmetadatas)?;
         Ok(globalmetadatas)
     }
 
-    fn fetch_overlayaddresspools(&self) -> Result<Vec<OverlayAddressPool>, BambouError> {
+    pub fn fetch_csnatpools(&self) -> Result<Vec<CSNATPool>, Error> {
+        let mut csnatpools = Vec::<CSNATPool>::new();
+        let _ = self.fetch_children(&mut csnatpools)?;
+        Ok(csnatpools)
+    }
+
+    pub fn fetch_psnatpools(&self) -> Result<Vec<PSNATPool>, Error> {
+        let mut psnatpools = Vec::<PSNATPool>::new();
+        let _ = self.fetch_children(&mut psnatpools)?;
+        Ok(psnatpools)
+    }
+
+    pub fn fetch_overlayaddresspools(&self) -> Result<Vec<OverlayAddressPool>, Error> {
         let mut overlayaddresspools = Vec::<OverlayAddressPool>::new();
-        try!(self.fetch_children(&mut overlayaddresspools));
+        let _ = self.fetch_children(&mut overlayaddresspools)?;
         Ok(overlayaddresspools)
     }
 }

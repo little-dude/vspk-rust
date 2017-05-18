@@ -1,4 +1,5 @@
-// Copyright (c) 2015-2016, Nokia Inc
+// Copyright (c) 2015 Alcatel-Lucent, (c) 2016 Nokia
+//
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -24,47 +25,117 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-use bambou::{BambouError, RestEntity, Session, SessionConfig};
-use hyper::client::{Response};
+use bambou::{Error, RestEntity, Session};
+use reqwest::Response;
 use std::collections::BTreeMap;
 use serde_json;
 
 
+pub use underlay::Underlay;
+pub use customproperty::CustomProperty;
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct UplinkConnection<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
     _session: Option<&'a Session>,
+
     #[serde(rename="ID")]
     id: Option<String>,
-    
+
     #[serde(rename="parentID")]
     parent_id: Option<String>,
+
     #[serde(rename="parentType")]
     parent_type: Option<String>,
+
     owner: Option<String>,
+
     
     #[serde(rename="DNSAddress")]
-    dns_address: Option<String>,
-    password: Option<String>,
-    address: Option<String>,
-    netmask: Option<String>,
-    mode: Option<String>,
-    role: Option<String>,
-    username: Option<String>,
+    pub dns_address: Option<String>,
+    
+    pub password: Option<String>,
+    
+    pub gateway: Option<String>,
+    
+    pub address: Option<String>,
+    
+    #[serde(rename="advertisementCriteria")]
+    pub advertisement_criteria: Option<String>,
+    
+    #[serde(rename="secondaryAddress")]
+    pub secondary_address: Option<String>,
+    
+    pub netmask: Option<String>,
+    
+    #[serde(rename="vlanId")]
+    pub vlan_id: Option<String>,
+    
+    #[serde(rename="interfaceConnectionType")]
+    pub interface_connection_type: Option<String>,
+    
+    pub mode: Option<String>,
+    
+    pub role: Option<String>,
+    
+    #[serde(rename="roleOrder")]
+    pub role_order: Option<String>,
+    
+    #[serde(rename="portName")]
+    pub port_name: Option<String>,
+    
+    #[serde(rename="uplinkID")]
+    pub uplink_id: Option<String>,
+    
+    pub username: Option<String>,
+    
+    #[serde(rename="assocUnderlayID")]
+    pub assoc_underlay_id: Option<String>,
+    
+    #[serde(rename="associatedBGPNeighborID")]
+    pub associated_bgp_neighbor_id: Option<String>,
+    
+    #[serde(rename="associatedUnderlayName")]
+    pub associated_underlay_name: Option<String>,
     
     #[serde(rename="associatedVSCProfileID")]
-    associated_vsc_profile_id: Option<String>,
+    pub associated_vsc_profile_id: Option<String>,
+    
+    #[serde(rename="auxiliaryLink")]
+    pub auxiliary_link: bool,
     
 }
 
 impl<'a> RestEntity<'a> for UplinkConnection<'a> {
-    fn fetch(&mut self) -> Result<Response, BambouError> {
+    fn fetch(&mut self) -> Result<Response, Error> {
         match self._session {
-            Some(session) => session.fetch(self),
-            None => Err(BambouError::NoSession),
+            Some(session) => session.fetch_entity(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn save(&mut self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.save(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn delete(self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.delete(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn create_child<C>(&self, child: &mut C) -> Result<Response, Error>
+        where C: RestEntity<'a>
+    {
+        match self._session {
+            Some(session) => session.create_child(self, child),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -84,12 +155,12 @@ impl<'a> RestEntity<'a> for UplinkConnection<'a> {
         self.id.as_ref().and_then(|id| Some(id.as_str()))
     }
 
-    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, BambouError>
+    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, Error>
         where R: RestEntity<'a>
     {
         match self._session {
             Some(session) => session.fetch_children(self, children),
-            None => Err(BambouError::NoSession),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -100,31 +171,19 @@ impl<'a> RestEntity<'a> for UplinkConnection<'a> {
     fn set_session(&mut self, session: &'a Session) {
         self._session = Some(session);
     }
-
-    fn save(&mut self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.save(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn delete(self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.delete(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn create_child<C>(&self, child: &mut C) -> Result<Response, BambouError>
-        where C: RestEntity<'a>
-    {
-        match self._session {
-            Some(session) => session.create_child(self, child),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
 }
 
 impl<'a> UplinkConnection<'a> {
+
+    pub fn fetch_underlays(&self) -> Result<Vec<Underlay>, Error> {
+        let mut underlays = Vec::<Underlay>::new();
+        let _ = self.fetch_children(&mut underlays)?;
+        Ok(underlays)
+    }
+
+    pub fn fetch_customproperties(&self) -> Result<Vec<CustomProperty>, Error> {
+        let mut customproperties = Vec::<CustomProperty>::new();
+        let _ = self.fetch_children(&mut customproperties)?;
+        Ok(customproperties)
+    }
 }

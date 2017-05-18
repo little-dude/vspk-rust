@@ -1,4 +1,5 @@
-// Copyright (c) 2015-2016, Nokia Inc
+// Copyright (c) 2015 Alcatel-Lucent, (c) 2016 Nokia
+//
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -24,8 +25,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-use bambou::{BambouError, RestEntity, Session, SessionConfig};
-use hyper::client::{Response};
+use bambou::{Error, RestEntity, Session};
+use reqwest::Response;
 use std::collections::BTreeMap;
 use serde_json;
 
@@ -43,126 +44,175 @@ pub use location::Location;
 pub use monitorscope::Monitorscope;
 pub use bootstrap::Bootstrap;
 pub use bootstrapactivation::BootstrapActivation;
+pub use uplinkconnection::UplinkConnection;
 pub use nsginfo::NSGInfo;
 pub use nsport::NSPort;
 pub use subnet::Subnet;
 pub use eventlog::EventLog;
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct NSGateway<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
     _session: Option<&'a Session>,
+
     #[serde(rename="ID")]
     id: Option<String>,
-    
+
     #[serde(rename="parentID")]
     parent_id: Option<String>,
+
     #[serde(rename="parentType")]
     parent_type: Option<String>,
+
     owner: Option<String>,
+
     
     #[serde(rename="MACAddress")]
-    mac_address: Option<String>,
+    pub mac_address: Option<String>,
     
     #[serde(rename="NATTraversalEnabled")]
-    nat_traversal_enabled: bool,
+    pub nat_traversal_enabled: bool,
+    
+    #[serde(rename="TCPMSSEnabled")]
+    pub tcpmss_enabled: bool,
+    
+    #[serde(rename="TCPMaximumSegmentSize")]
+    pub tcp_maximum_segment_size: u64,
     
     #[serde(rename="SKU")]
-    sku: Option<String>,
+    pub sku: Option<String>,
     
     #[serde(rename="TPMStatus")]
-    tpm_status: Option<String>,
+    pub tpm_status: Option<String>,
     
     #[serde(rename="CPUType")]
-    cpu_type: Option<String>,
+    pub cpu_type: Option<String>,
     
     #[serde(rename="NSGVersion")]
-    nsg_version: Option<String>,
+    pub nsg_version: Option<String>,
     
     #[serde(rename="SSHService")]
-    ssh_service: Option<String>,
+    pub ssh_service: Option<String>,
     
     #[serde(rename="UUID")]
-    uuid: Option<String>,
-    name: Option<String>,
-    family: Option<String>,
+    pub uuid: Option<String>,
+    
+    pub name: Option<String>,
+    
+    pub family: Option<String>,
     
     #[serde(rename="lastConfigurationReloadTimestamp")]
-    last_configuration_reload_timestamp: u64,
+    pub last_configuration_reload_timestamp: u64,
     
     #[serde(rename="lastUpdatedBy")]
-    last_updated_by: Option<String>,
+    pub last_updated_by: Option<String>,
     
     #[serde(rename="datapathID")]
-    datapath_id: Option<String>,
+    pub datapath_id: Option<String>,
     
     #[serde(rename="redundancyGroupID")]
-    redundancy_group_id: Option<String>,
+    pub redundancy_group_id: Option<String>,
     
     #[serde(rename="templateID")]
-    template_id: Option<String>,
-    pending: bool,
+    pub template_id: Option<String>,
+    
+    pub pending: bool,
     
     #[serde(rename="serialNumber")]
-    serial_number: Option<String>,
+    pub serial_number: Option<String>,
+    
+    #[serde(rename="derivedSSHServiceState")]
+    pub derived_ssh_service_state: Option<String>,
     
     #[serde(rename="permittedAction")]
-    permitted_action: Option<String>,
-    personality: Option<String>,
-    description: Option<String>,
-    libraries: Option<String>,
+    pub permitted_action: Option<String>,
+    
+    pub personality: Option<String>,
+    
+    pub description: Option<String>,
+    
+    pub libraries: Option<String>,
     
     #[serde(rename="inheritedSSHServiceState")]
-    inherited_ssh_service_state: Option<String>,
+    pub inherited_ssh_service_state: Option<String>,
     
     #[serde(rename="enterpriseID")]
-    enterprise_id: Option<String>,
+    pub enterprise_id: Option<String>,
     
     #[serde(rename="entityScope")]
-    entity_scope: Option<String>,
+    pub entity_scope: Option<String>,
     
     #[serde(rename="locationID")]
-    location_id: Option<String>,
+    pub location_id: Option<String>,
     
     #[serde(rename="configurationReloadState")]
-    configuration_reload_state: Option<String>,
+    pub configuration_reload_state: Option<String>,
     
     #[serde(rename="configurationStatus")]
-    configuration_status: Option<String>,
+    pub configuration_status: Option<String>,
     
     #[serde(rename="bootstrapID")]
-    bootstrap_id: Option<String>,
+    pub bootstrap_id: Option<String>,
     
     #[serde(rename="bootstrapStatus")]
-    bootstrap_status: Option<String>,
+    pub bootstrap_status: Option<String>,
+    
+    #[serde(rename="operationMode")]
+    pub operation_mode: Option<String>,
+    
+    #[serde(rename="operationStatus")]
+    pub operation_status: Option<String>,
     
     #[serde(rename="associatedGatewaySecurityID")]
-    associated_gateway_security_id: Option<String>,
+    pub associated_gateway_security_id: Option<String>,
     
     #[serde(rename="associatedGatewaySecurityProfileID")]
-    associated_gateway_security_profile_id: Option<String>,
+    pub associated_gateway_security_profile_id: Option<String>,
     
     #[serde(rename="associatedNSGInfoID")]
-    associated_nsg_info_id: Option<String>,
+    pub associated_nsg_info_id: Option<String>,
     
     #[serde(rename="autoDiscGatewayID")]
-    auto_disc_gateway_id: Option<String>,
+    pub auto_disc_gateway_id: Option<String>,
     
     #[serde(rename="externalID")]
-    external_id: Option<String>,
+    pub external_id: Option<String>,
     
     #[serde(rename="systemID")]
-    system_id: Option<String>,
+    pub system_id: Option<String>,
     
 }
 
 impl<'a> RestEntity<'a> for NSGateway<'a> {
-    fn fetch(&mut self) -> Result<Response, BambouError> {
+    fn fetch(&mut self) -> Result<Response, Error> {
         match self._session {
-            Some(session) => session.fetch(self),
-            None => Err(BambouError::NoSession),
+            Some(session) => session.fetch_entity(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn save(&mut self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.save(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn delete(self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.delete(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn create_child<C>(&self, child: &mut C) -> Result<Response, Error>
+        where C: RestEntity<'a>
+    {
+        match self._session {
+            Some(session) => session.create_child(self, child),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -182,12 +232,12 @@ impl<'a> RestEntity<'a> for NSGateway<'a> {
         self.id.as_ref().and_then(|id| Some(id.as_str()))
     }
 
-    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, BambouError>
+    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, Error>
         where R: RestEntity<'a>
     {
         match self._session {
             Some(session) => session.fetch_children(self, children),
-            None => Err(BambouError::NoSession),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -198,133 +248,115 @@ impl<'a> RestEntity<'a> for NSGateway<'a> {
     fn set_session(&mut self, session: &'a Session) {
         self._session = Some(session);
     }
-
-    fn save(&mut self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.save(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn delete(self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.delete(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn create_child<C>(&self, child: &mut C) -> Result<Response, BambouError>
-        where C: RestEntity<'a>
-    {
-        match self._session {
-            Some(session) => session.create_child(self, child),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
 }
 
 impl<'a> NSGateway<'a> {
 
-    fn fetch_gatewaysecurities(&self) -> Result<Vec<GatewaySecurity>, BambouError> {
+    pub fn fetch_gatewaysecurities(&self) -> Result<Vec<GatewaySecurity>, Error> {
         let mut gatewaysecurities = Vec::<GatewaySecurity>::new();
-        try!(self.fetch_children(&mut gatewaysecurities));
+        let _ = self.fetch_children(&mut gatewaysecurities)?;
         Ok(gatewaysecurities)
     }
 
-    fn fetch_patnatpools(&self) -> Result<Vec<PATNATPool>, BambouError> {
+    pub fn fetch_patnatpools(&self) -> Result<Vec<PATNATPool>, Error> {
         let mut patnatpools = Vec::<PATNATPool>::new();
-        try!(self.fetch_children(&mut patnatpools));
+        let _ = self.fetch_children(&mut patnatpools)?;
         Ok(patnatpools)
     }
 
-    fn fetch_permissions(&self) -> Result<Vec<Permission>, BambouError> {
+    pub fn fetch_permissions(&self) -> Result<Vec<Permission>, Error> {
         let mut permissions = Vec::<Permission>::new();
-        try!(self.fetch_children(&mut permissions));
+        let _ = self.fetch_children(&mut permissions)?;
         Ok(permissions)
     }
 
-    fn fetch_metadatas(&self) -> Result<Vec<Metadata>, BambouError> {
+    pub fn fetch_metadatas(&self) -> Result<Vec<Metadata>, Error> {
         let mut metadatas = Vec::<Metadata>::new();
-        try!(self.fetch_children(&mut metadatas));
+        let _ = self.fetch_children(&mut metadatas)?;
         Ok(metadatas)
     }
 
-    fn fetch_alarms(&self) -> Result<Vec<Alarm>, BambouError> {
+    pub fn fetch_alarms(&self) -> Result<Vec<Alarm>, Error> {
         let mut alarms = Vec::<Alarm>::new();
-        try!(self.fetch_children(&mut alarms));
+        let _ = self.fetch_children(&mut alarms)?;
         Ok(alarms)
     }
 
-    fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, BambouError> {
+    pub fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, Error> {
         let mut globalmetadatas = Vec::<GlobalMetadata>::new();
-        try!(self.fetch_children(&mut globalmetadatas));
+        let _ = self.fetch_children(&mut globalmetadatas)?;
         Ok(globalmetadatas)
     }
 
-    fn fetch_infraconfig(&self) -> Result<Vec<InfrastructureConfig>, BambouError> {
+    pub fn fetch_infraconfig(&self) -> Result<Vec<InfrastructureConfig>, Error> {
         let mut infraconfig = Vec::<InfrastructureConfig>::new();
-        try!(self.fetch_children(&mut infraconfig));
+        let _ = self.fetch_children(&mut infraconfig)?;
         Ok(infraconfig)
     }
 
-    fn fetch_enterprisepermissions(&self) -> Result<Vec<EnterprisePermission>, BambouError> {
+    pub fn fetch_enterprisepermissions(&self) -> Result<Vec<EnterprisePermission>, Error> {
         let mut enterprisepermissions = Vec::<EnterprisePermission>::new();
-        try!(self.fetch_children(&mut enterprisepermissions));
+        let _ = self.fetch_children(&mut enterprisepermissions)?;
         Ok(enterprisepermissions)
     }
 
-    fn fetch_jobs(&self) -> Result<Vec<Job>, BambouError> {
+    pub fn fetch_jobs(&self) -> Result<Vec<Job>, Error> {
         let mut jobs = Vec::<Job>::new();
-        try!(self.fetch_children(&mut jobs));
+        let _ = self.fetch_children(&mut jobs)?;
         Ok(jobs)
     }
 
-    fn fetch_locations(&self) -> Result<Vec<Location>, BambouError> {
+    pub fn fetch_locations(&self) -> Result<Vec<Location>, Error> {
         let mut locations = Vec::<Location>::new();
-        try!(self.fetch_children(&mut locations));
+        let _ = self.fetch_children(&mut locations)?;
         Ok(locations)
     }
 
-    fn fetch_monitorscopes(&self) -> Result<Vec<Monitorscope>, BambouError> {
+    pub fn fetch_monitorscopes(&self) -> Result<Vec<Monitorscope>, Error> {
         let mut monitorscopes = Vec::<Monitorscope>::new();
-        try!(self.fetch_children(&mut monitorscopes));
+        let _ = self.fetch_children(&mut monitorscopes)?;
         Ok(monitorscopes)
     }
 
-    fn fetch_bootstraps(&self) -> Result<Vec<Bootstrap>, BambouError> {
+    pub fn fetch_bootstraps(&self) -> Result<Vec<Bootstrap>, Error> {
         let mut bootstraps = Vec::<Bootstrap>::new();
-        try!(self.fetch_children(&mut bootstraps));
+        let _ = self.fetch_children(&mut bootstraps)?;
         Ok(bootstraps)
     }
 
-    fn fetch_bootstrapactivations(&self) -> Result<Vec<BootstrapActivation>, BambouError> {
+    pub fn fetch_bootstrapactivations(&self) -> Result<Vec<BootstrapActivation>, Error> {
         let mut bootstrapactivations = Vec::<BootstrapActivation>::new();
-        try!(self.fetch_children(&mut bootstrapactivations));
+        let _ = self.fetch_children(&mut bootstrapactivations)?;
         Ok(bootstrapactivations)
     }
 
-    fn fetch_nsginfos(&self) -> Result<Vec<NSGInfo>, BambouError> {
+    pub fn fetch_uplinkconnections(&self) -> Result<Vec<UplinkConnection>, Error> {
+        let mut uplinkconnections = Vec::<UplinkConnection>::new();
+        let _ = self.fetch_children(&mut uplinkconnections)?;
+        Ok(uplinkconnections)
+    }
+
+    pub fn fetch_nsginfos(&self) -> Result<Vec<NSGInfo>, Error> {
         let mut nsginfos = Vec::<NSGInfo>::new();
-        try!(self.fetch_children(&mut nsginfos));
+        let _ = self.fetch_children(&mut nsginfos)?;
         Ok(nsginfos)
     }
 
-    fn fetch_nsports(&self) -> Result<Vec<NSPort>, BambouError> {
+    pub fn fetch_nsports(&self) -> Result<Vec<NSPort>, Error> {
         let mut nsports = Vec::<NSPort>::new();
-        try!(self.fetch_children(&mut nsports));
+        let _ = self.fetch_children(&mut nsports)?;
         Ok(nsports)
     }
 
-    fn fetch_subnets(&self) -> Result<Vec<Subnet>, BambouError> {
+    pub fn fetch_subnets(&self) -> Result<Vec<Subnet>, Error> {
         let mut subnets = Vec::<Subnet>::new();
-        try!(self.fetch_children(&mut subnets));
+        let _ = self.fetch_children(&mut subnets)?;
         Ok(subnets)
     }
 
-    fn fetch_eventlogs(&self) -> Result<Vec<EventLog>, BambouError> {
+    pub fn fetch_eventlogs(&self) -> Result<Vec<EventLog>, Error> {
         let mut eventlogs = Vec::<EventLog>::new();
-        try!(self.fetch_children(&mut eventlogs));
+        let _ = self.fetch_children(&mut eventlogs)?;
         Ok(eventlogs)
     }
 }

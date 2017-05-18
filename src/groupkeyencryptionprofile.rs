@@ -1,4 +1,5 @@
-// Copyright (c) 2015-2016, Nokia Inc
+// Copyright (c) 2015 Alcatel-Lucent, (c) 2016 Nokia
+//
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -24,8 +25,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-use bambou::{BambouError, RestEntity, Session, SessionConfig};
-use hyper::client::{Response};
+use bambou::{Error, RestEntity, Session};
+use reqwest::Response;
 use std::collections::BTreeMap;
 use serde_json;
 
@@ -34,95 +35,124 @@ pub use metadata::Metadata;
 pub use globalmetadata::GlobalMetadata;
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct GroupKeyEncryptionProfile<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
     _session: Option<&'a Session>,
+
     #[serde(rename="ID")]
     id: Option<String>,
-    
+
     #[serde(rename="parentID")]
     parent_id: Option<String>,
+
     #[serde(rename="parentType")]
     parent_type: Option<String>,
+
     owner: Option<String>,
+
     
     #[serde(rename="SEKGenerationInterval")]
-    sek_generation_interval: u64,
+    pub sek_generation_interval: u64,
     
     #[serde(rename="SEKLifetime")]
-    sek_lifetime: u64,
+    pub sek_lifetime: u64,
     
     #[serde(rename="SEKPayloadEncryptionAlgorithm")]
-    sek_payload_encryption_algorithm: Option<String>,
+    pub sek_payload_encryption_algorithm: Option<String>,
     
     #[serde(rename="SEKPayloadEncryptionBCAlgorithm")]
-    sek_payload_encryption_bc_algorithm: Option<String>,
+    pub sek_payload_encryption_bc_algorithm: Option<String>,
     
     #[serde(rename="SEKPayloadEncryptionKeyLength")]
-    sek_payload_encryption_key_length: u64,
+    pub sek_payload_encryption_key_length: u64,
     
     #[serde(rename="SEKPayloadSigningAlgorithm")]
-    sek_payload_signing_algorithm: Option<String>,
-    name: Option<String>,
+    pub sek_payload_signing_algorithm: Option<String>,
+    
+    pub name: Option<String>,
     
     #[serde(rename="lastUpdatedBy")]
-    last_updated_by: Option<String>,
+    pub last_updated_by: Option<String>,
     
     #[serde(rename="seedGenerationInterval")]
-    seed_generation_interval: u64,
+    pub seed_generation_interval: u64,
     
     #[serde(rename="seedLifetime")]
-    seed_lifetime: u64,
+    pub seed_lifetime: u64,
     
     #[serde(rename="seedPayloadAuthenticationAlgorithm")]
-    seed_payload_authentication_algorithm: Option<String>,
+    pub seed_payload_authentication_algorithm: Option<String>,
     
     #[serde(rename="seedPayloadAuthenticationBCAlgorithm")]
-    seed_payload_authentication_bc_algorithm: Option<String>,
+    pub seed_payload_authentication_bc_algorithm: Option<String>,
     
     #[serde(rename="seedPayloadAuthenticationKeyLength")]
-    seed_payload_authentication_key_length: u64,
+    pub seed_payload_authentication_key_length: u64,
     
     #[serde(rename="seedPayloadEncryptionAlgorithm")]
-    seed_payload_encryption_algorithm: Option<String>,
+    pub seed_payload_encryption_algorithm: Option<String>,
     
     #[serde(rename="seedPayloadEncryptionBCAlgorithm")]
-    seed_payload_encryption_bc_algorithm: Option<String>,
+    pub seed_payload_encryption_bc_algorithm: Option<String>,
     
     #[serde(rename="seedPayloadEncryptionKeyLength")]
-    seed_payload_encryption_key_length: u64,
+    pub seed_payload_encryption_key_length: u64,
     
     #[serde(rename="seedPayloadSigningAlgorithm")]
-    seed_payload_signing_algorithm: Option<String>,
-    description: Option<String>,
+    pub seed_payload_signing_algorithm: Option<String>,
+    
+    pub description: Option<String>,
     
     #[serde(rename="entityScope")]
-    entity_scope: Option<String>,
+    pub entity_scope: Option<String>,
     
     #[serde(rename="trafficAuthenticationAlgorithm")]
-    traffic_authentication_algorithm: Option<String>,
+    pub traffic_authentication_algorithm: Option<String>,
     
     #[serde(rename="trafficEncryptionAlgorithm")]
-    traffic_encryption_algorithm: Option<String>,
+    pub traffic_encryption_algorithm: Option<String>,
     
     #[serde(rename="trafficEncryptionKeyLifetime")]
-    traffic_encryption_key_lifetime: u64,
+    pub traffic_encryption_key_lifetime: u64,
     
     #[serde(rename="associatedEnterpriseID")]
-    associated_enterprise_id: Option<String>,
+    pub associated_enterprise_id: Option<String>,
     
     #[serde(rename="externalID")]
-    external_id: Option<String>,
+    pub external_id: Option<String>,
     
 }
 
 impl<'a> RestEntity<'a> for GroupKeyEncryptionProfile<'a> {
-    fn fetch(&mut self) -> Result<Response, BambouError> {
+    fn fetch(&mut self) -> Result<Response, Error> {
         match self._session {
-            Some(session) => session.fetch(self),
-            None => Err(BambouError::NoSession),
+            Some(session) => session.fetch_entity(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn save(&mut self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.save(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn delete(self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.delete(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn create_child<C>(&self, child: &mut C) -> Result<Response, Error>
+        where C: RestEntity<'a>
+    {
+        match self._session {
+            Some(session) => session.create_child(self, child),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -142,12 +172,12 @@ impl<'a> RestEntity<'a> for GroupKeyEncryptionProfile<'a> {
         self.id.as_ref().and_then(|id| Some(id.as_str()))
     }
 
-    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, BambouError>
+    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, Error>
         where R: RestEntity<'a>
     {
         match self._session {
             Some(session) => session.fetch_children(self, children),
-            None => Err(BambouError::NoSession),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -158,43 +188,19 @@ impl<'a> RestEntity<'a> for GroupKeyEncryptionProfile<'a> {
     fn set_session(&mut self, session: &'a Session) {
         self._session = Some(session);
     }
-
-    fn save(&mut self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.save(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn delete(self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.delete(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn create_child<C>(&self, child: &mut C) -> Result<Response, BambouError>
-        where C: RestEntity<'a>
-    {
-        match self._session {
-            Some(session) => session.create_child(self, child),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
 }
 
 impl<'a> GroupKeyEncryptionProfile<'a> {
 
-    fn fetch_metadatas(&self) -> Result<Vec<Metadata>, BambouError> {
+    pub fn fetch_metadatas(&self) -> Result<Vec<Metadata>, Error> {
         let mut metadatas = Vec::<Metadata>::new();
-        try!(self.fetch_children(&mut metadatas));
+        let _ = self.fetch_children(&mut metadatas)?;
         Ok(metadatas)
     }
 
-    fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, BambouError> {
+    pub fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, Error> {
         let mut globalmetadatas = Vec::<GlobalMetadata>::new();
-        try!(self.fetch_children(&mut globalmetadatas));
+        let _ = self.fetch_children(&mut globalmetadatas)?;
         Ok(globalmetadatas)
     }
 }

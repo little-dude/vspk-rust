@@ -1,4 +1,5 @@
-// Copyright (c) 2015-2016, Nokia Inc
+// Copyright (c) 2015 Alcatel-Lucent, (c) 2016 Nokia
+//
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -24,8 +25,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-use bambou::{BambouError, RestEntity, Session, SessionConfig};
-use hyper::client::{Response};
+use bambou::{Error, RestEntity, Session};
+use reqwest::Response;
 use std::collections::BTreeMap;
 use serde_json;
 
@@ -42,63 +43,96 @@ pub use port::Port;
 pub use eventlog::EventLog;
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct Gateway<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
     _session: Option<&'a Session>,
+
     #[serde(rename="ID")]
     id: Option<String>,
-    
+
     #[serde(rename="parentID")]
     parent_id: Option<String>,
+
     #[serde(rename="parentType")]
     parent_type: Option<String>,
+
     owner: Option<String>,
-    name: Option<String>,
+
+    
+    pub name: Option<String>,
     
     #[serde(rename="lastUpdatedBy")]
-    last_updated_by: Option<String>,
+    pub last_updated_by: Option<String>,
     
     #[serde(rename="redundancyGroupID")]
-    redundancy_group_id: Option<String>,
-    peer: Option<String>,
+    pub redundancy_group_id: Option<String>,
+    
+    pub peer: Option<String>,
     
     #[serde(rename="templateID")]
-    template_id: Option<String>,
-    pending: bool,
+    pub template_id: Option<String>,
+    
+    pub pending: bool,
     
     #[serde(rename="permittedAction")]
-    permitted_action: Option<String>,
-    personality: Option<String>,
-    description: Option<String>,
+    pub permitted_action: Option<String>,
+    
+    pub personality: Option<String>,
+    
+    pub description: Option<String>,
     
     #[serde(rename="enterpriseID")]
-    enterprise_id: Option<String>,
+    pub enterprise_id: Option<String>,
     
     #[serde(rename="entityScope")]
-    entity_scope: Option<String>,
+    pub entity_scope: Option<String>,
     
     #[serde(rename="useGatewayVLANVNID")]
-    use_gateway_vlanvnid: bool,
-    vtep: Option<String>,
+    pub use_gateway_vlanvnid: bool,
+    
+    pub vtep: Option<String>,
     
     #[serde(rename="autoDiscGatewayID")]
-    auto_disc_gateway_id: Option<String>,
+    pub auto_disc_gateway_id: Option<String>,
     
     #[serde(rename="externalID")]
-    external_id: Option<String>,
+    pub external_id: Option<String>,
     
     #[serde(rename="systemID")]
-    system_id: Option<String>,
+    pub system_id: Option<String>,
     
 }
 
 impl<'a> RestEntity<'a> for Gateway<'a> {
-    fn fetch(&mut self) -> Result<Response, BambouError> {
+    fn fetch(&mut self) -> Result<Response, Error> {
         match self._session {
-            Some(session) => session.fetch(self),
-            None => Err(BambouError::NoSession),
+            Some(session) => session.fetch_entity(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn save(&mut self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.save(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn delete(self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.delete(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn create_child<C>(&self, child: &mut C) -> Result<Response, Error>
+        where C: RestEntity<'a>
+    {
+        match self._session {
+            Some(session) => session.create_child(self, child),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -118,12 +152,12 @@ impl<'a> RestEntity<'a> for Gateway<'a> {
         self.id.as_ref().and_then(|id| Some(id.as_str()))
     }
 
-    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, BambouError>
+    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, Error>
         where R: RestEntity<'a>
     {
         match self._session {
             Some(session) => session.fetch_children(self, children),
-            None => Err(BambouError::NoSession),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -134,91 +168,67 @@ impl<'a> RestEntity<'a> for Gateway<'a> {
     fn set_session(&mut self, session: &'a Session) {
         self._session = Some(session);
     }
-
-    fn save(&mut self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.save(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn delete(self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.delete(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn create_child<C>(&self, child: &mut C) -> Result<Response, BambouError>
-        where C: RestEntity<'a>
-    {
-        match self._session {
-            Some(session) => session.create_child(self, child),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
 }
 
 impl<'a> Gateway<'a> {
 
-    fn fetch_patnatpools(&self) -> Result<Vec<PATNATPool>, BambouError> {
+    pub fn fetch_patnatpools(&self) -> Result<Vec<PATNATPool>, Error> {
         let mut patnatpools = Vec::<PATNATPool>::new();
-        try!(self.fetch_children(&mut patnatpools));
+        let _ = self.fetch_children(&mut patnatpools)?;
         Ok(patnatpools)
     }
 
-    fn fetch_permissions(&self) -> Result<Vec<Permission>, BambouError> {
+    pub fn fetch_permissions(&self) -> Result<Vec<Permission>, Error> {
         let mut permissions = Vec::<Permission>::new();
-        try!(self.fetch_children(&mut permissions));
+        let _ = self.fetch_children(&mut permissions)?;
         Ok(permissions)
     }
 
-    fn fetch_services(&self) -> Result<Vec<WANService>, BambouError> {
+    pub fn fetch_services(&self) -> Result<Vec<WANService>, Error> {
         let mut services = Vec::<WANService>::new();
-        try!(self.fetch_children(&mut services));
+        let _ = self.fetch_children(&mut services)?;
         Ok(services)
     }
 
-    fn fetch_metadatas(&self) -> Result<Vec<Metadata>, BambouError> {
+    pub fn fetch_metadatas(&self) -> Result<Vec<Metadata>, Error> {
         let mut metadatas = Vec::<Metadata>::new();
-        try!(self.fetch_children(&mut metadatas));
+        let _ = self.fetch_children(&mut metadatas)?;
         Ok(metadatas)
     }
 
-    fn fetch_alarms(&self) -> Result<Vec<Alarm>, BambouError> {
+    pub fn fetch_alarms(&self) -> Result<Vec<Alarm>, Error> {
         let mut alarms = Vec::<Alarm>::new();
-        try!(self.fetch_children(&mut alarms));
+        let _ = self.fetch_children(&mut alarms)?;
         Ok(alarms)
     }
 
-    fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, BambouError> {
+    pub fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, Error> {
         let mut globalmetadatas = Vec::<GlobalMetadata>::new();
-        try!(self.fetch_children(&mut globalmetadatas));
+        let _ = self.fetch_children(&mut globalmetadatas)?;
         Ok(globalmetadatas)
     }
 
-    fn fetch_enterprisepermissions(&self) -> Result<Vec<EnterprisePermission>, BambouError> {
+    pub fn fetch_enterprisepermissions(&self) -> Result<Vec<EnterprisePermission>, Error> {
         let mut enterprisepermissions = Vec::<EnterprisePermission>::new();
-        try!(self.fetch_children(&mut enterprisepermissions));
+        let _ = self.fetch_children(&mut enterprisepermissions)?;
         Ok(enterprisepermissions)
     }
 
-    fn fetch_jobs(&self) -> Result<Vec<Job>, BambouError> {
+    pub fn fetch_jobs(&self) -> Result<Vec<Job>, Error> {
         let mut jobs = Vec::<Job>::new();
-        try!(self.fetch_children(&mut jobs));
+        let _ = self.fetch_children(&mut jobs)?;
         Ok(jobs)
     }
 
-    fn fetch_ports(&self) -> Result<Vec<Port>, BambouError> {
+    pub fn fetch_ports(&self) -> Result<Vec<Port>, Error> {
         let mut ports = Vec::<Port>::new();
-        try!(self.fetch_children(&mut ports));
+        let _ = self.fetch_children(&mut ports)?;
         Ok(ports)
     }
 
-    fn fetch_eventlogs(&self) -> Result<Vec<EventLog>, BambouError> {
+    pub fn fetch_eventlogs(&self) -> Result<Vec<EventLog>, Error> {
         let mut eventlogs = Vec::<EventLog>::new();
-        try!(self.fetch_children(&mut eventlogs));
+        let _ = self.fetch_children(&mut eventlogs)?;
         Ok(eventlogs)
     }
 }

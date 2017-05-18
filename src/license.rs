@@ -1,4 +1,5 @@
-// Copyright (c) 2015-2016, Nokia Inc
+// Copyright (c) 2015 Alcatel-Lucent, (c) 2016 Nokia
+//
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -24,8 +25,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-use bambou::{BambouError, RestEntity, Session, SessionConfig};
-use hyper::client::{Response};
+use bambou::{Error, RestEntity, Session};
+use reqwest::Response;
 use std::collections::BTreeMap;
 use serde_json;
 
@@ -35,103 +36,149 @@ pub use globalmetadata::GlobalMetadata;
 pub use eventlog::EventLog;
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct License<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
     _session: Option<&'a Session>,
+
     #[serde(rename="ID")]
     id: Option<String>,
-    
+
     #[serde(rename="parentID")]
     parent_id: Option<String>,
+
     #[serde(rename="parentType")]
     parent_type: Option<String>,
+
     owner: Option<String>,
+
     
     #[serde(rename="majorRelease")]
-    major_release: u64,
+    pub major_release: u64,
     
     #[serde(rename="lastUpdatedBy")]
-    last_updated_by: Option<String>,
+    pub last_updated_by: Option<String>,
     
     #[serde(rename="additionalSupportedVersions")]
-    additional_supported_versions: Option<String>,
-    phone: Option<String>,
-    license: Option<String>,
+    pub additional_supported_versions: Option<String>,
+    
+    pub phone: Option<String>,
+    
+    pub license: Option<String>,
     
     #[serde(rename="licenseEncryption")]
-    license_encryption: Option<String>,
+    pub license_encryption: Option<String>,
     
     #[serde(rename="licenseEntities")]
-    license_entities: Option<String>,
+    pub license_entities: Option<String>,
     
     #[serde(rename="licenseID")]
-    license_id: u64,
+    pub license_id: u64,
     
     #[serde(rename="licenseType")]
-    license_type: Option<String>,
+    pub license_type: Option<String>,
     
     #[serde(rename="minorRelease")]
-    minor_release: u64,
-    zip: Option<String>,
-    city: Option<String>,
+    pub minor_release: u64,
+    
+    pub zip: Option<String>,
+    
+    pub city: Option<String>,
+    
+    #[serde(rename="allowedAVRSGsCount")]
+    pub allowed_avrsgs_count: u64,
+    
+    #[serde(rename="allowedAVRSsCount")]
+    pub allowed_avrss_count: u64,
     
     #[serde(rename="allowedCPEsCount")]
-    allowed_cpes_count: u64,
+    pub allowed_cpes_count: u64,
     
     #[serde(rename="allowedNICsCount")]
-    allowed_nics_count: u64,
+    pub allowed_nics_count: u64,
     
     #[serde(rename="allowedVMsCount")]
-    allowed_vms_count: u64,
+    pub allowed_vms_count: u64,
     
     #[serde(rename="allowedVRSGsCount")]
-    allowed_vrsgs_count: u64,
+    pub allowed_vrsgs_count: u64,
     
     #[serde(rename="allowedVRSsCount")]
-    allowed_vrss_count: u64,
-    email: Option<String>,
+    pub allowed_vrss_count: u64,
+    
+    pub email: Option<String>,
     
     #[serde(rename="encryptionMode")]
-    encryption_mode: bool,
+    pub encryption_mode: bool,
     
     #[serde(rename="uniqueLicenseIdentifier")]
-    unique_license_identifier: Option<String>,
+    pub unique_license_identifier: Option<String>,
     
     #[serde(rename="entityScope")]
-    entity_scope: Option<String>,
-    company: Option<String>,
-    country: Option<String>,
+    pub entity_scope: Option<String>,
+    
+    pub company: Option<String>,
+    
+    pub country: Option<String>,
     
     #[serde(rename="productVersion")]
-    product_version: Option<String>,
-    provider: Option<String>,
+    pub product_version: Option<String>,
+    
+    pub provider: Option<String>,
     
     #[serde(rename="isClusterLicense")]
-    is_cluster_license: bool,
+    pub is_cluster_license: bool,
     
     #[serde(rename="userName")]
-    user_name: Option<String>,
-    state: Option<String>,
-    street: Option<String>,
+    pub user_name: Option<String>,
+    
+    pub state: Option<String>,
+    
+    pub street: Option<String>,
     
     #[serde(rename="customerKey")]
-    customer_key: Option<String>,
+    pub customer_key: Option<String>,
     
     #[serde(rename="expirationDate")]
-    expiration_date: f64,
+    pub expiration_date: f64,
+    
+    #[serde(rename="expiryTimestamp")]
+    pub expiry_timestamp: u64,
     
     #[serde(rename="externalID")]
-    external_id: Option<String>,
+    pub external_id: Option<String>,
     
 }
 
 impl<'a> RestEntity<'a> for License<'a> {
-    fn fetch(&mut self) -> Result<Response, BambouError> {
+    fn fetch(&mut self) -> Result<Response, Error> {
         match self._session {
-            Some(session) => session.fetch(self),
-            None => Err(BambouError::NoSession),
+            Some(session) => session.fetch_entity(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn save(&mut self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.save(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn delete(self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.delete(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn create_child<C>(&self, child: &mut C) -> Result<Response, Error>
+        where C: RestEntity<'a>
+    {
+        match self._session {
+            Some(session) => session.create_child(self, child),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -151,12 +198,12 @@ impl<'a> RestEntity<'a> for License<'a> {
         self.id.as_ref().and_then(|id| Some(id.as_str()))
     }
 
-    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, BambouError>
+    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, Error>
         where R: RestEntity<'a>
     {
         match self._session {
             Some(session) => session.fetch_children(self, children),
-            None => Err(BambouError::NoSession),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -167,49 +214,25 @@ impl<'a> RestEntity<'a> for License<'a> {
     fn set_session(&mut self, session: &'a Session) {
         self._session = Some(session);
     }
-
-    fn save(&mut self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.save(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn delete(self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.delete(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn create_child<C>(&self, child: &mut C) -> Result<Response, BambouError>
-        where C: RestEntity<'a>
-    {
-        match self._session {
-            Some(session) => session.create_child(self, child),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
 }
 
 impl<'a> License<'a> {
 
-    fn fetch_metadatas(&self) -> Result<Vec<Metadata>, BambouError> {
+    pub fn fetch_metadatas(&self) -> Result<Vec<Metadata>, Error> {
         let mut metadatas = Vec::<Metadata>::new();
-        try!(self.fetch_children(&mut metadatas));
+        let _ = self.fetch_children(&mut metadatas)?;
         Ok(metadatas)
     }
 
-    fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, BambouError> {
+    pub fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, Error> {
         let mut globalmetadatas = Vec::<GlobalMetadata>::new();
-        try!(self.fetch_children(&mut globalmetadatas));
+        let _ = self.fetch_children(&mut globalmetadatas)?;
         Ok(globalmetadatas)
     }
 
-    fn fetch_eventlogs(&self) -> Result<Vec<EventLog>, BambouError> {
+    pub fn fetch_eventlogs(&self) -> Result<Vec<EventLog>, Error> {
         let mut eventlogs = Vec::<EventLog>::new();
-        try!(self.fetch_children(&mut eventlogs));
+        let _ = self.fetch_children(&mut eventlogs)?;
         Ok(eventlogs)
     }
 }

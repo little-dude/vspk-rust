@@ -1,4 +1,5 @@
-// Copyright (c) 2015-2016, Nokia Inc
+// Copyright (c) 2015 Alcatel-Lucent, (c) 2016 Nokia
+//
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -24,8 +25,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-use bambou::{BambouError, RestEntity, Session, SessionConfig};
-use hyper::client::{Response};
+use bambou::{Error, RestEntity, Session};
+use reqwest::Response;
 use std::collections::BTreeMap;
 use serde_json;
 
@@ -37,57 +38,90 @@ pub use subnettemplate::SubnetTemplate;
 pub use eventlog::EventLog;
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct ZoneTemplate<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
     _session: Option<&'a Session>,
+
     #[serde(rename="ID")]
     id: Option<String>,
-    
+
     #[serde(rename="parentID")]
     parent_id: Option<String>,
+
     #[serde(rename="parentType")]
     parent_type: Option<String>,
+
     owner: Option<String>,
+
     
     #[serde(rename="DPI")]
-    dpi: Option<String>,
+    pub dpi: Option<String>,
     
     #[serde(rename="IPType")]
-    ip_type: Option<String>,
-    name: Option<String>,
+    pub ip_type: Option<String>,
+    
+    pub name: Option<String>,
     
     #[serde(rename="lastUpdatedBy")]
-    last_updated_by: Option<String>,
-    address: Option<String>,
-    description: Option<String>,
-    netmask: Option<String>,
-    encryption: Option<String>,
+    pub last_updated_by: Option<String>,
+    
+    pub address: Option<String>,
+    
+    pub description: Option<String>,
+    
+    pub netmask: Option<String>,
+    
+    pub encryption: Option<String>,
     
     #[serde(rename="entityScope")]
-    entity_scope: Option<String>,
+    pub entity_scope: Option<String>,
     
     #[serde(rename="associatedMulticastChannelMapID")]
-    associated_multicast_channel_map_id: Option<String>,
+    pub associated_multicast_channel_map_id: Option<String>,
     
     #[serde(rename="publicZone")]
-    public_zone: bool,
-    multicast: Option<String>,
+    pub public_zone: bool,
+    
+    pub multicast: Option<String>,
     
     #[serde(rename="numberOfHostsInSubnets")]
-    number_of_hosts_in_subnets: u64,
+    pub number_of_hosts_in_subnets: u64,
     
     #[serde(rename="externalID")]
-    external_id: Option<String>,
+    pub external_id: Option<String>,
     
 }
 
 impl<'a> RestEntity<'a> for ZoneTemplate<'a> {
-    fn fetch(&mut self) -> Result<Response, BambouError> {
+    fn fetch(&mut self) -> Result<Response, Error> {
         match self._session {
-            Some(session) => session.fetch(self),
-            None => Err(BambouError::NoSession),
+            Some(session) => session.fetch_entity(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn save(&mut self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.save(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn delete(self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.delete(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn create_child<C>(&self, child: &mut C) -> Result<Response, Error>
+        where C: RestEntity<'a>
+    {
+        match self._session {
+            Some(session) => session.create_child(self, child),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -107,12 +141,12 @@ impl<'a> RestEntity<'a> for ZoneTemplate<'a> {
         self.id.as_ref().and_then(|id| Some(id.as_str()))
     }
 
-    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, BambouError>
+    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, Error>
         where R: RestEntity<'a>
     {
         match self._session {
             Some(session) => session.fetch_children(self, children),
-            None => Err(BambouError::NoSession),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -123,61 +157,37 @@ impl<'a> RestEntity<'a> for ZoneTemplate<'a> {
     fn set_session(&mut self, session: &'a Session) {
         self._session = Some(session);
     }
-
-    fn save(&mut self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.save(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn delete(self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.delete(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn create_child<C>(&self, child: &mut C) -> Result<Response, BambouError>
-        where C: RestEntity<'a>
-    {
-        match self._session {
-            Some(session) => session.create_child(self, child),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
 }
 
 impl<'a> ZoneTemplate<'a> {
 
-    fn fetch_metadatas(&self) -> Result<Vec<Metadata>, BambouError> {
+    pub fn fetch_metadatas(&self) -> Result<Vec<Metadata>, Error> {
         let mut metadatas = Vec::<Metadata>::new();
-        try!(self.fetch_children(&mut metadatas));
+        let _ = self.fetch_children(&mut metadatas)?;
         Ok(metadatas)
     }
 
-    fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, BambouError> {
+    pub fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, Error> {
         let mut globalmetadatas = Vec::<GlobalMetadata>::new();
-        try!(self.fetch_children(&mut globalmetadatas));
+        let _ = self.fetch_children(&mut globalmetadatas)?;
         Ok(globalmetadatas)
     }
 
-    fn fetch_qos(&self) -> Result<Vec<QOS>, BambouError> {
+    pub fn fetch_qos(&self) -> Result<Vec<QOS>, Error> {
         let mut qos = Vec::<QOS>::new();
-        try!(self.fetch_children(&mut qos));
+        let _ = self.fetch_children(&mut qos)?;
         Ok(qos)
     }
 
-    fn fetch_subnettemplates(&self) -> Result<Vec<SubnetTemplate>, BambouError> {
+    pub fn fetch_subnettemplates(&self) -> Result<Vec<SubnetTemplate>, Error> {
         let mut subnettemplates = Vec::<SubnetTemplate>::new();
-        try!(self.fetch_children(&mut subnettemplates));
+        let _ = self.fetch_children(&mut subnettemplates)?;
         Ok(subnettemplates)
     }
 
-    fn fetch_eventlogs(&self) -> Result<Vec<EventLog>, BambouError> {
+    pub fn fetch_eventlogs(&self) -> Result<Vec<EventLog>, Error> {
         let mut eventlogs = Vec::<EventLog>::new();
-        try!(self.fetch_children(&mut eventlogs));
+        let _ = self.fetch_children(&mut eventlogs)?;
         Ok(eventlogs)
     }
 }

@@ -1,4 +1,5 @@
-// Copyright (c) 2015-2016, Nokia Inc
+// Copyright (c) 2015 Alcatel-Lucent, (c) 2016 Nokia
+//
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -24,8 +25,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-use bambou::{BambouError, RestEntity, Session, SessionConfig};
-use hyper::client::{Response};
+use bambou::{Error, RestEntity, Session};
+use reqwest::Response;
 use std::collections::BTreeMap;
 use serde_json;
 
@@ -37,98 +38,142 @@ pub use container::Container;
 pub use eventlog::EventLog;
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct QOS<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
     _session: Option<&'a Session>,
+
     #[serde(rename="ID")]
     id: Option<String>,
-    
+
     #[serde(rename="parentID")]
     parent_id: Option<String>,
+
     #[serde(rename="parentType")]
     parent_type: Option<String>,
+
     owner: Option<String>,
+
     
     #[serde(rename="FIPCommittedBurstSize")]
-    fip_committed_burst_size: Option<String>,
+    pub fip_committed_burst_size: Option<String>,
     
     #[serde(rename="FIPCommittedInformationRate")]
-    fip_committed_information_rate: Option<String>,
+    pub fip_committed_information_rate: Option<String>,
     
     #[serde(rename="FIPPeakBurstSize")]
-    fip_peak_burst_size: Option<String>,
+    pub fip_peak_burst_size: Option<String>,
     
     #[serde(rename="FIPPeakInformationRate")]
-    fip_peak_information_rate: Option<String>,
+    pub fip_peak_information_rate: Option<String>,
     
     #[serde(rename="FIPRateLimitingActive")]
-    fip_rate_limiting_active: bool,
+    pub fip_rate_limiting_active: bool,
     
     #[serde(rename="BUMCommittedBurstSize")]
-    bum_committed_burst_size: Option<String>,
+    pub bum_committed_burst_size: Option<String>,
     
     #[serde(rename="BUMCommittedInformationRate")]
-    bum_committed_information_rate: Option<String>,
+    pub bum_committed_information_rate: Option<String>,
     
     #[serde(rename="BUMPeakBurstSize")]
-    bum_peak_burst_size: Option<String>,
+    pub bum_peak_burst_size: Option<String>,
     
     #[serde(rename="BUMPeakInformationRate")]
-    bum_peak_information_rate: Option<String>,
+    pub bum_peak_information_rate: Option<String>,
     
     #[serde(rename="BUMRateLimitingActive")]
-    bum_rate_limiting_active: bool,
-    name: Option<String>,
+    pub bum_rate_limiting_active: bool,
+    
+    pub name: Option<String>,
     
     #[serde(rename="lastUpdatedBy")]
-    last_updated_by: Option<String>,
+    pub last_updated_by: Option<String>,
     
     #[serde(rename="rateLimitingActive")]
-    rate_limiting_active: bool,
-    active: bool,
-    peak: Option<String>,
+    pub rate_limiting_active: bool,
+    
+    pub active: bool,
+    
+    pub peak: Option<String>,
     
     #[serde(rename="serviceClass")]
-    service_class: Option<String>,
-    description: Option<String>,
+    pub service_class: Option<String>,
+    
+    pub description: Option<String>,
     
     #[serde(rename="rewriteForwardingClass")]
-    rewrite_forwarding_class: bool,
+    pub rewrite_forwarding_class: bool,
+    
+    #[serde(rename="EgressFIPCommittedBurstSize")]
+    pub egress_fip_committed_burst_size: Option<String>,
+    
+    #[serde(rename="EgressFIPCommittedInformationRate")]
+    pub egress_fip_committed_information_rate: Option<String>,
+    
+    #[serde(rename="EgressFIPPeakBurstSize")]
+    pub egress_fip_peak_burst_size: Option<String>,
+    
+    #[serde(rename="EgressFIPPeakInformationRate")]
+    pub egress_fip_peak_information_rate: Option<String>,
     
     #[serde(rename="entityScope")]
-    entity_scope: Option<String>,
+    pub entity_scope: Option<String>,
     
     #[serde(rename="committedBurstSize")]
-    committed_burst_size: Option<String>,
+    pub committed_burst_size: Option<String>,
     
     #[serde(rename="committedInformationRate")]
-    committed_information_rate: Option<String>,
+    pub committed_information_rate: Option<String>,
     
     #[serde(rename="trustedForwardingClass")]
-    trusted_forwarding_class: bool,
+    pub trusted_forwarding_class: bool,
     
     #[serde(rename="assocQosId")]
-    assoc_qos_id: Option<String>,
+    pub assoc_qos_id: Option<String>,
     
     #[serde(rename="associatedDSCPForwardingClassTableID")]
-    associated_dscp_forwarding_class_table_id: Option<String>,
+    pub associated_dscp_forwarding_class_table_id: Option<String>,
     
     #[serde(rename="associatedDSCPForwardingClassTableName")]
-    associated_dscp_forwarding_class_table_name: Option<String>,
-    burst: Option<String>,
+    pub associated_dscp_forwarding_class_table_name: Option<String>,
+    
+    pub burst: Option<String>,
     
     #[serde(rename="externalID")]
-    external_id: Option<String>,
+    pub external_id: Option<String>,
     
 }
 
 impl<'a> RestEntity<'a> for QOS<'a> {
-    fn fetch(&mut self) -> Result<Response, BambouError> {
+    fn fetch(&mut self) -> Result<Response, Error> {
         match self._session {
-            Some(session) => session.fetch(self),
-            None => Err(BambouError::NoSession),
+            Some(session) => session.fetch_entity(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn save(&mut self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.save(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn delete(self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.delete(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn create_child<C>(&self, child: &mut C) -> Result<Response, Error>
+        where C: RestEntity<'a>
+    {
+        match self._session {
+            Some(session) => session.create_child(self, child),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -148,12 +193,12 @@ impl<'a> RestEntity<'a> for QOS<'a> {
         self.id.as_ref().and_then(|id| Some(id.as_str()))
     }
 
-    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, BambouError>
+    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, Error>
         where R: RestEntity<'a>
     {
         match self._session {
             Some(session) => session.fetch_children(self, children),
-            None => Err(BambouError::NoSession),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -164,61 +209,37 @@ impl<'a> RestEntity<'a> for QOS<'a> {
     fn set_session(&mut self, session: &'a Session) {
         self._session = Some(session);
     }
-
-    fn save(&mut self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.save(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn delete(self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.delete(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn create_child<C>(&self, child: &mut C) -> Result<Response, BambouError>
-        where C: RestEntity<'a>
-    {
-        match self._session {
-            Some(session) => session.create_child(self, child),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
 }
 
 impl<'a> QOS<'a> {
 
-    fn fetch_metadatas(&self) -> Result<Vec<Metadata>, BambouError> {
+    pub fn fetch_metadatas(&self) -> Result<Vec<Metadata>, Error> {
         let mut metadatas = Vec::<Metadata>::new();
-        try!(self.fetch_children(&mut metadatas));
+        let _ = self.fetch_children(&mut metadatas)?;
         Ok(metadatas)
     }
 
-    fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, BambouError> {
+    pub fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, Error> {
         let mut globalmetadatas = Vec::<GlobalMetadata>::new();
-        try!(self.fetch_children(&mut globalmetadatas));
+        let _ = self.fetch_children(&mut globalmetadatas)?;
         Ok(globalmetadatas)
     }
 
-    fn fetch_vms(&self) -> Result<Vec<VM>, BambouError> {
+    pub fn fetch_vms(&self) -> Result<Vec<VM>, Error> {
         let mut vms = Vec::<VM>::new();
-        try!(self.fetch_children(&mut vms));
+        let _ = self.fetch_children(&mut vms)?;
         Ok(vms)
     }
 
-    fn fetch_containers(&self) -> Result<Vec<Container>, BambouError> {
+    pub fn fetch_containers(&self) -> Result<Vec<Container>, Error> {
         let mut containers = Vec::<Container>::new();
-        try!(self.fetch_children(&mut containers));
+        let _ = self.fetch_children(&mut containers)?;
         Ok(containers)
     }
 
-    fn fetch_eventlogs(&self) -> Result<Vec<EventLog>, BambouError> {
+    pub fn fetch_eventlogs(&self) -> Result<Vec<EventLog>, Error> {
         let mut eventlogs = Vec::<EventLog>::new();
-        try!(self.fetch_children(&mut eventlogs));
+        let _ = self.fetch_children(&mut eventlogs)?;
         Ok(eventlogs)
     }
 }

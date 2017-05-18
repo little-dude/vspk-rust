@@ -1,4 +1,5 @@
-// Copyright (c) 2015-2016, Nokia Inc
+// Copyright (c) 2015 Alcatel-Lucent, (c) 2016 Nokia
+//
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -24,8 +25,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-use bambou::{BambouError, RestEntity, Session, SessionConfig};
-use hyper::client::{Response};
+use bambou::{Error, RestEntity, Session};
+use reqwest::Response;
 use std::collections::BTreeMap;
 use serde_json;
 
@@ -35,77 +36,102 @@ pub use globalmetadata::GlobalMetadata;
 pub use enterprise::Enterprise;
 pub use multicastlist::MultiCastList;
 pub use eventlog::EventLog;
-pub use externalservice::ExternalService;
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct EnterpriseProfile<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
     _session: Option<&'a Session>,
+
     #[serde(rename="ID")]
     id: Option<String>,
-    
+
     #[serde(rename="parentID")]
     parent_id: Option<String>,
+
     #[serde(rename="parentType")]
     parent_type: Option<String>,
+
     owner: Option<String>,
+
     
     #[serde(rename="BGPEnabled")]
-    bgp_enabled: bool,
+    pub bgp_enabled: bool,
     
     #[serde(rename="DHCPLeaseInterval")]
-    dhcp_lease_interval: u64,
+    pub dhcp_lease_interval: u64,
     
-    #[serde(rename="DPIEnabled")]
-    dpi_enabled: bool,
-    name: Option<String>,
+    pub name: Option<String>,
     
     #[serde(rename="lastUpdatedBy")]
-    last_updated_by: Option<String>,
+    pub last_updated_by: Option<String>,
     
     #[serde(rename="receiveMultiCastListID")]
-    receive_multi_cast_list_id: Option<String>,
+    pub receive_multi_cast_list_id: Option<String>,
     
     #[serde(rename="sendMultiCastListID")]
-    send_multi_cast_list_id: Option<String>,
-    description: Option<String>,
+    pub send_multi_cast_list_id: Option<String>,
+    
+    pub description: Option<String>,
     
     #[serde(rename="allowAdvancedQOSConfiguration")]
-    allow_advanced_qos_configuration: bool,
+    pub allow_advanced_qos_configuration: bool,
     
     #[serde(rename="allowGatewayManagement")]
-    allow_gateway_management: bool,
+    pub allow_gateway_management: bool,
     
     #[serde(rename="allowTrustedForwardingClass")]
-    allow_trusted_forwarding_class: bool,
+    pub allow_trusted_forwarding_class: bool,
     
     #[serde(rename="allowedForwardingClasses")]
-    allowed_forwarding_classes: Vec<Option<String>>,
+    pub allowed_forwarding_classes: Vec<Option<String>>,
     
     #[serde(rename="floatingIPsQuota")]
-    floating_ips_quota: u64,
+    pub floating_ips_quota: u64,
     
     #[serde(rename="enableApplicationPerformanceManagement")]
-    enable_application_performance_management: bool,
+    pub enable_application_performance_management: bool,
     
     #[serde(rename="encryptionManagementMode")]
-    encryption_management_mode: Option<String>,
+    pub encryption_management_mode: Option<String>,
     
     #[serde(rename="entityScope")]
-    entity_scope: Option<String>,
+    pub entity_scope: Option<String>,
     
     #[serde(rename="externalID")]
-    external_id: Option<String>,
+    pub external_id: Option<String>,
     
 }
 
 impl<'a> RestEntity<'a> for EnterpriseProfile<'a> {
-    fn fetch(&mut self) -> Result<Response, BambouError> {
+    fn fetch(&mut self) -> Result<Response, Error> {
         match self._session {
-            Some(session) => session.fetch(self),
-            None => Err(BambouError::NoSession),
+            Some(session) => session.fetch_entity(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn save(&mut self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.save(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn delete(self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.delete(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn create_child<C>(&self, child: &mut C) -> Result<Response, Error>
+        where C: RestEntity<'a>
+    {
+        match self._session {
+            Some(session) => session.create_child(self, child),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -125,12 +151,12 @@ impl<'a> RestEntity<'a> for EnterpriseProfile<'a> {
         self.id.as_ref().and_then(|id| Some(id.as_str()))
     }
 
-    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, BambouError>
+    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, Error>
         where R: RestEntity<'a>
     {
         match self._session {
             Some(session) => session.fetch_children(self, children),
-            None => Err(BambouError::NoSession),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -141,67 +167,37 @@ impl<'a> RestEntity<'a> for EnterpriseProfile<'a> {
     fn set_session(&mut self, session: &'a Session) {
         self._session = Some(session);
     }
-
-    fn save(&mut self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.save(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn delete(self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.delete(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn create_child<C>(&self, child: &mut C) -> Result<Response, BambouError>
-        where C: RestEntity<'a>
-    {
-        match self._session {
-            Some(session) => session.create_child(self, child),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
 }
 
 impl<'a> EnterpriseProfile<'a> {
 
-    fn fetch_metadatas(&self) -> Result<Vec<Metadata>, BambouError> {
+    pub fn fetch_metadatas(&self) -> Result<Vec<Metadata>, Error> {
         let mut metadatas = Vec::<Metadata>::new();
-        try!(self.fetch_children(&mut metadatas));
+        let _ = self.fetch_children(&mut metadatas)?;
         Ok(metadatas)
     }
 
-    fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, BambouError> {
+    pub fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, Error> {
         let mut globalmetadatas = Vec::<GlobalMetadata>::new();
-        try!(self.fetch_children(&mut globalmetadatas));
+        let _ = self.fetch_children(&mut globalmetadatas)?;
         Ok(globalmetadatas)
     }
 
-    fn fetch_enterprises(&self) -> Result<Vec<Enterprise>, BambouError> {
+    pub fn fetch_enterprises(&self) -> Result<Vec<Enterprise>, Error> {
         let mut enterprises = Vec::<Enterprise>::new();
-        try!(self.fetch_children(&mut enterprises));
+        let _ = self.fetch_children(&mut enterprises)?;
         Ok(enterprises)
     }
 
-    fn fetch_multicastlists(&self) -> Result<Vec<MultiCastList>, BambouError> {
+    pub fn fetch_multicastlists(&self) -> Result<Vec<MultiCastList>, Error> {
         let mut multicastlists = Vec::<MultiCastList>::new();
-        try!(self.fetch_children(&mut multicastlists));
+        let _ = self.fetch_children(&mut multicastlists)?;
         Ok(multicastlists)
     }
 
-    fn fetch_eventlogs(&self) -> Result<Vec<EventLog>, BambouError> {
+    pub fn fetch_eventlogs(&self) -> Result<Vec<EventLog>, Error> {
         let mut eventlogs = Vec::<EventLog>::new();
-        try!(self.fetch_children(&mut eventlogs));
+        let _ = self.fetch_children(&mut eventlogs)?;
         Ok(eventlogs)
-    }
-
-    fn fetch_externalservices(&self) -> Result<Vec<ExternalService>, BambouError> {
-        let mut externalservices = Vec::<ExternalService>::new();
-        try!(self.fetch_children(&mut externalservices));
-        Ok(externalservices)
     }
 }

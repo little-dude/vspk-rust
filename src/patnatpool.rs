@@ -1,4 +1,5 @@
-// Copyright (c) 2015-2016, Nokia Inc
+// Copyright (c) 2015 Alcatel-Lucent, (c) 2016 Nokia
+//
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -24,8 +25,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-use bambou::{BambouError, RestEntity, Session, SessionConfig};
-use hyper::client::{Response};
+use bambou::{Error, RestEntity, Session};
+use reqwest::Response;
 use std::collections::BTreeMap;
 use serde_json;
 
@@ -40,74 +41,103 @@ pub use statisticspolicy::StatisticsPolicy;
 pub use bulkstatistics::BulkStatistics;
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct PATNATPool<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
     _session: Option<&'a Session>,
+
     #[serde(rename="ID")]
     id: Option<String>,
-    
+
     #[serde(rename="parentID")]
     parent_id: Option<String>,
+
     #[serde(rename="parentType")]
     parent_type: Option<String>,
+
     owner: Option<String>,
-    name: Option<String>,
+
+    
+    pub name: Option<String>,
     
     #[serde(rename="lastUpdatedBy")]
-    last_updated_by: Option<String>,
+    pub last_updated_by: Option<String>,
     
     #[serde(rename="addressRange")]
-    address_range: Option<String>,
+    pub address_range: Option<String>,
     
     #[serde(rename="defaultPATIP")]
-    default_patip: Option<String>,
+    pub default_patip: Option<String>,
     
     #[serde(rename="permittedAction")]
-    permitted_action: Option<String>,
-    description: Option<String>,
+    pub permitted_action: Option<String>,
+    
+    pub description: Option<String>,
     
     #[serde(rename="endAddressRange")]
-    end_address_range: Option<String>,
+    pub end_address_range: Option<String>,
     
     #[serde(rename="endSourceAddress")]
-    end_source_address: Option<String>,
+    pub end_source_address: Option<String>,
     
     #[serde(rename="entityScope")]
-    entity_scope: Option<String>,
+    pub entity_scope: Option<String>,
     
     #[serde(rename="associatedGatewayId")]
-    associated_gateway_id: Option<String>,
+    pub associated_gateway_id: Option<String>,
     
     #[serde(rename="associatedGatewayType")]
-    associated_gateway_type: Option<String>,
+    pub associated_gateway_type: Option<String>,
     
     #[serde(rename="associatedSubnetId")]
-    associated_subnet_id: Option<String>,
+    pub associated_subnet_id: Option<String>,
     
     #[serde(rename="associatedVlanId")]
-    associated_vlan_id: Option<String>,
+    pub associated_vlan_id: Option<String>,
     
     #[serde(rename="startAddressRange")]
-    start_address_range: Option<String>,
+    pub start_address_range: Option<String>,
     
     #[serde(rename="startSourceAddress")]
-    start_source_address: Option<String>,
+    pub start_source_address: Option<String>,
     
     #[serde(rename="externalID")]
-    external_id: Option<String>,
+    pub external_id: Option<String>,
     
     #[serde(rename="dynamicSourceEnabled")]
-    dynamic_source_enabled: bool,
+    pub dynamic_source_enabled: bool,
     
 }
 
 impl<'a> RestEntity<'a> for PATNATPool<'a> {
-    fn fetch(&mut self) -> Result<Response, BambouError> {
+    fn fetch(&mut self) -> Result<Response, Error> {
         match self._session {
-            Some(session) => session.fetch(self),
-            None => Err(BambouError::NoSession),
+            Some(session) => session.fetch_entity(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn save(&mut self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.save(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn delete(self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.delete(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn create_child<C>(&self, child: &mut C) -> Result<Response, Error>
+        where C: RestEntity<'a>
+    {
+        match self._session {
+            Some(session) => session.create_child(self, child),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -127,12 +157,12 @@ impl<'a> RestEntity<'a> for PATNATPool<'a> {
         self.id.as_ref().and_then(|id| Some(id.as_str()))
     }
 
-    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, BambouError>
+    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, Error>
         where R: RestEntity<'a>
     {
         match self._session {
             Some(session) => session.fetch_children(self, children),
-            None => Err(BambouError::NoSession),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -143,79 +173,55 @@ impl<'a> RestEntity<'a> for PATNATPool<'a> {
     fn set_session(&mut self, session: &'a Session) {
         self._session = Some(session);
     }
-
-    fn save(&mut self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.save(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn delete(self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.delete(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn create_child<C>(&self, child: &mut C) -> Result<Response, BambouError>
-        where C: RestEntity<'a>
-    {
-        match self._session {
-            Some(session) => session.create_child(self, child),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
 }
 
 impl<'a> PATNATPool<'a> {
 
-    fn fetch_natmapentries(&self) -> Result<Vec<NATMapEntry>, BambouError> {
+    pub fn fetch_natmapentries(&self) -> Result<Vec<NATMapEntry>, Error> {
         let mut natmapentries = Vec::<NATMapEntry>::new();
-        try!(self.fetch_children(&mut natmapentries));
+        let _ = self.fetch_children(&mut natmapentries)?;
         Ok(natmapentries)
     }
 
-    fn fetch_addressmaps(&self) -> Result<Vec<AddressMap>, BambouError> {
+    pub fn fetch_addressmaps(&self) -> Result<Vec<AddressMap>, Error> {
         let mut addressmaps = Vec::<AddressMap>::new();
-        try!(self.fetch_children(&mut addressmaps));
+        let _ = self.fetch_children(&mut addressmaps)?;
         Ok(addressmaps)
     }
 
-    fn fetch_metadatas(&self) -> Result<Vec<Metadata>, BambouError> {
+    pub fn fetch_metadatas(&self) -> Result<Vec<Metadata>, Error> {
         let mut metadatas = Vec::<Metadata>::new();
-        try!(self.fetch_children(&mut metadatas));
+        let _ = self.fetch_children(&mut metadatas)?;
         Ok(metadatas)
     }
 
-    fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, BambouError> {
+    pub fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, Error> {
         let mut globalmetadatas = Vec::<GlobalMetadata>::new();
-        try!(self.fetch_children(&mut globalmetadatas));
+        let _ = self.fetch_children(&mut globalmetadatas)?;
         Ok(globalmetadatas)
     }
 
-    fn fetch_enterprisepermissions(&self) -> Result<Vec<EnterprisePermission>, BambouError> {
+    pub fn fetch_enterprisepermissions(&self) -> Result<Vec<EnterprisePermission>, Error> {
         let mut enterprisepermissions = Vec::<EnterprisePermission>::new();
-        try!(self.fetch_children(&mut enterprisepermissions));
+        let _ = self.fetch_children(&mut enterprisepermissions)?;
         Ok(enterprisepermissions)
     }
 
-    fn fetch_statistics(&self) -> Result<Vec<Statistics>, BambouError> {
+    pub fn fetch_statistics(&self) -> Result<Vec<Statistics>, Error> {
         let mut statistics = Vec::<Statistics>::new();
-        try!(self.fetch_children(&mut statistics));
+        let _ = self.fetch_children(&mut statistics)?;
         Ok(statistics)
     }
 
-    fn fetch_statisticspolicies(&self) -> Result<Vec<StatisticsPolicy>, BambouError> {
+    pub fn fetch_statisticspolicies(&self) -> Result<Vec<StatisticsPolicy>, Error> {
         let mut statisticspolicies = Vec::<StatisticsPolicy>::new();
-        try!(self.fetch_children(&mut statisticspolicies));
+        let _ = self.fetch_children(&mut statisticspolicies)?;
         Ok(statisticspolicies)
     }
 
-    fn fetch_bulkstatistics(&self) -> Result<Vec<BulkStatistics>, BambouError> {
+    pub fn fetch_bulkstatistics(&self) -> Result<Vec<BulkStatistics>, Error> {
         let mut bulkstatistics = Vec::<BulkStatistics>::new();
-        try!(self.fetch_children(&mut bulkstatistics));
+        let _ = self.fetch_children(&mut bulkstatistics)?;
         Ok(bulkstatistics)
     }
 }

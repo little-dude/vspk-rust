@@ -1,4 +1,5 @@
-// Copyright (c) 2015-2016, Nokia Inc
+// Copyright (c) 2015 Alcatel-Lucent, (c) 2016 Nokia
+//
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -24,77 +25,104 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-use bambou::{BambouError, RestEntity, Session, SessionConfig};
-use hyper::client::{Response};
+use bambou::{Error, RestEntity, Session};
+use reqwest::Response;
 use std::collections::BTreeMap;
 use serde_json;
 
 
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct VRSRedeploymentpolicy<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
     _session: Option<&'a Session>,
+
     #[serde(rename="ID")]
     id: Option<String>,
-    
+
     #[serde(rename="parentID")]
     parent_id: Option<String>,
+
     #[serde(rename="parentType")]
     parent_type: Option<String>,
+
     owner: Option<String>,
+
     
     #[serde(rename="ALUbr0StatusRedeploymentEnabled")]
-    al_ubr0_status_redeployment_enabled: bool,
+    pub al_ubr0_status_redeployment_enabled: bool,
     
     #[serde(rename="CPUUtilizationRedeploymentEnabled")]
-    cpu_utilization_redeployment_enabled: bool,
+    pub cpu_utilization_redeployment_enabled: bool,
     
     #[serde(rename="CPUUtilizationThreshold")]
-    cpu_utilization_threshold: f64,
+    pub cpu_utilization_threshold: f64,
     
     #[serde(rename="VRSCorrectiveActionDelay")]
-    vrs_corrective_action_delay: u64,
+    pub vrs_corrective_action_delay: u64,
     
     #[serde(rename="VRSProcessRedeploymentEnabled")]
-    vrs_process_redeployment_enabled: bool,
+    pub vrs_process_redeployment_enabled: bool,
     
     #[serde(rename="VRSVSCStatusRedeploymentEnabled")]
-    vrsvsc_status_redeployment_enabled: bool,
+    pub vrsvsc_status_redeployment_enabled: bool,
     
     #[serde(rename="lastUpdatedBy")]
-    last_updated_by: Option<String>,
+    pub last_updated_by: Option<String>,
     
     #[serde(rename="redeploymentDelay")]
-    redeployment_delay: u64,
+    pub redeployment_delay: u64,
     
     #[serde(rename="memoryUtilizationRedeploymentEnabled")]
-    memory_utilization_redeployment_enabled: bool,
+    pub memory_utilization_redeployment_enabled: bool,
     
     #[serde(rename="memoryUtilizationThreshold")]
-    memory_utilization_threshold: f64,
+    pub memory_utilization_threshold: f64,
     
     #[serde(rename="deploymentCountThreshold")]
-    deployment_count_threshold: u64,
+    pub deployment_count_threshold: u64,
     
     #[serde(rename="jesxmonProcessRedeploymentEnabled")]
-    jesxmon_process_redeployment_enabled: bool,
+    pub jesxmon_process_redeployment_enabled: bool,
     
     #[serde(rename="entityScope")]
-    entity_scope: Option<String>,
+    pub entity_scope: Option<String>,
     
     #[serde(rename="externalID")]
-    external_id: Option<String>,
+    pub external_id: Option<String>,
     
 }
 
 impl<'a> RestEntity<'a> for VRSRedeploymentpolicy<'a> {
-    fn fetch(&mut self) -> Result<Response, BambouError> {
+    fn fetch(&mut self) -> Result<Response, Error> {
         match self._session {
-            Some(session) => session.fetch(self),
-            None => Err(BambouError::NoSession),
+            Some(session) => session.fetch_entity(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn save(&mut self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.save(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn delete(self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.delete(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn create_child<C>(&self, child: &mut C) -> Result<Response, Error>
+        where C: RestEntity<'a>
+    {
+        match self._session {
+            Some(session) => session.create_child(self, child),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -114,12 +142,12 @@ impl<'a> RestEntity<'a> for VRSRedeploymentpolicy<'a> {
         self.id.as_ref().and_then(|id| Some(id.as_str()))
     }
 
-    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, BambouError>
+    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, Error>
         where R: RestEntity<'a>
     {
         match self._session {
             Some(session) => session.fetch_children(self, children),
-            None => Err(BambouError::NoSession),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -130,30 +158,6 @@ impl<'a> RestEntity<'a> for VRSRedeploymentpolicy<'a> {
     fn set_session(&mut self, session: &'a Session) {
         self._session = Some(session);
     }
-
-    fn save(&mut self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.save(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn delete(self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.delete(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn create_child<C>(&self, child: &mut C) -> Result<Response, BambouError>
-        where C: RestEntity<'a>
-    {
-        match self._session {
-            Some(session) => session.create_child(self, child),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
 }
 
 impl<'a> VRSRedeploymentpolicy<'a> {

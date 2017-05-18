@@ -1,4 +1,5 @@
-// Copyright (c) 2015-2016, Nokia Inc
+// Copyright (c) 2015 Alcatel-Lucent, (c) 2016 Nokia
+//
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -24,8 +25,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-use bambou::{BambouError, RestEntity, Session, SessionConfig};
-use hyper::client::{Response};
+use bambou::{Error, RestEntity, Session};
+use reqwest::Response;
 use std::collections::BTreeMap;
 use serde_json;
 
@@ -36,122 +37,154 @@ pub use job::Job;
 pub use statistics::Statistics;
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct IngressAdvFwdEntryTemplate<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
     _session: Option<&'a Session>,
+
     #[serde(rename="ID")]
     id: Option<String>,
-    
+
     #[serde(rename="parentID")]
     parent_id: Option<String>,
+
     #[serde(rename="parentType")]
     parent_type: Option<String>,
+
     owner: Option<String>,
+
     
     #[serde(rename="ACLTemplateName")]
-    acl_template_name: Option<String>,
+    pub acl_template_name: Option<String>,
     
     #[serde(rename="ICMPCode")]
-    icmp_code: Option<String>,
+    pub icmp_code: Option<String>,
     
     #[serde(rename="ICMPType")]
-    icmp_type: Option<String>,
+    pub icmp_type: Option<String>,
     
     #[serde(rename="FCOverride")]
-    fc_override: Option<String>,
+    pub fc_override: Option<String>,
     
     #[serde(rename="IPv6AddressOverride")]
-    ipv6_address_override: Option<String>,
+    pub ipv6_address_override: Option<String>,
     
     #[serde(rename="DSCP")]
-    dscp: Option<String>,
-    name: Option<String>,
+    pub dscp: Option<String>,
+    
+    pub name: Option<String>,
     
     #[serde(rename="lastUpdatedBy")]
-    last_updated_by: Option<String>,
-    action: Option<String>,
+    pub last_updated_by: Option<String>,
+    
+    pub action: Option<String>,
     
     #[serde(rename="addressOverride")]
-    address_override: Option<String>,
+    pub address_override: Option<String>,
     
     #[serde(rename="redirectVPortTagID")]
-    redirect_vport_tag_id: Option<String>,
-    description: Option<String>,
+    pub redirect_vport_tag_id: Option<String>,
+    
+    pub description: Option<String>,
     
     #[serde(rename="destinationPort")]
-    destination_port: Option<String>,
+    pub destination_port: Option<String>,
     
     #[serde(rename="networkID")]
-    network_id: Option<String>,
+    pub network_id: Option<String>,
     
     #[serde(rename="networkType")]
-    network_type: Option<String>,
+    pub network_type: Option<String>,
     
     #[serde(rename="mirrorDestinationID")]
-    mirror_destination_id: Option<String>,
+    pub mirror_destination_id: Option<String>,
     
     #[serde(rename="flowLoggingEnabled")]
-    flow_logging_enabled: bool,
+    pub flow_logging_enabled: bool,
     
     #[serde(rename="enterpriseName")]
-    enterprise_name: Option<String>,
+    pub enterprise_name: Option<String>,
     
     #[serde(rename="entityScope")]
-    entity_scope: Option<String>,
+    pub entity_scope: Option<String>,
     
     #[serde(rename="locationID")]
-    location_id: Option<String>,
+    pub location_id: Option<String>,
     
     #[serde(rename="locationType")]
-    location_type: Option<String>,
+    pub location_type: Option<String>,
     
     #[serde(rename="policyState")]
-    policy_state: Option<String>,
+    pub policy_state: Option<String>,
     
     #[serde(rename="domainName")]
-    domain_name: Option<String>,
+    pub domain_name: Option<String>,
     
     #[serde(rename="sourcePort")]
-    source_port: Option<String>,
+    pub source_port: Option<String>,
     
     #[serde(rename="uplinkPreference")]
-    uplink_preference: Option<String>,
-    priority: u64,
-    protocol: Option<String>,
+    pub uplink_preference: Option<String>,
+    
+    pub priority: u64,
+    
+    pub protocol: Option<String>,
     
     #[serde(rename="associatedApplicationID")]
-    associated_application_id: Option<String>,
+    pub associated_application_id: Option<String>,
     
     #[serde(rename="associatedApplicationObjectID")]
-    associated_application_object_id: Option<String>,
+    pub associated_application_object_id: Option<String>,
     
     #[serde(rename="associatedApplicationObjectType")]
-    associated_application_object_type: Option<String>,
+    pub associated_application_object_type: Option<String>,
     
     #[serde(rename="associatedLiveEntityID")]
-    associated_live_entity_id: Option<String>,
+    pub associated_live_entity_id: Option<String>,
     
     #[serde(rename="statsID")]
-    stats_id: Option<String>,
+    pub stats_id: Option<String>,
     
     #[serde(rename="statsLoggingEnabled")]
-    stats_logging_enabled: bool,
+    pub stats_logging_enabled: bool,
     
     #[serde(rename="etherType")]
-    ether_type: Option<String>,
+    pub ether_type: Option<String>,
     
     #[serde(rename="externalID")]
-    external_id: Option<String>,
+    pub external_id: Option<String>,
     
 }
 
 impl<'a> RestEntity<'a> for IngressAdvFwdEntryTemplate<'a> {
-    fn fetch(&mut self) -> Result<Response, BambouError> {
+    fn fetch(&mut self) -> Result<Response, Error> {
         match self._session {
-            Some(session) => session.fetch(self),
-            None => Err(BambouError::NoSession),
+            Some(session) => session.fetch_entity(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn save(&mut self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.save(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn delete(self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.delete(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn create_child<C>(&self, child: &mut C) -> Result<Response, Error>
+        where C: RestEntity<'a>
+    {
+        match self._session {
+            Some(session) => session.create_child(self, child),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -171,12 +204,12 @@ impl<'a> RestEntity<'a> for IngressAdvFwdEntryTemplate<'a> {
         self.id.as_ref().and_then(|id| Some(id.as_str()))
     }
 
-    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, BambouError>
+    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, Error>
         where R: RestEntity<'a>
     {
         match self._session {
             Some(session) => session.fetch_children(self, children),
-            None => Err(BambouError::NoSession),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -187,55 +220,31 @@ impl<'a> RestEntity<'a> for IngressAdvFwdEntryTemplate<'a> {
     fn set_session(&mut self, session: &'a Session) {
         self._session = Some(session);
     }
-
-    fn save(&mut self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.save(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn delete(self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.delete(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn create_child<C>(&self, child: &mut C) -> Result<Response, BambouError>
-        where C: RestEntity<'a>
-    {
-        match self._session {
-            Some(session) => session.create_child(self, child),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
 }
 
 impl<'a> IngressAdvFwdEntryTemplate<'a> {
 
-    fn fetch_metadatas(&self) -> Result<Vec<Metadata>, BambouError> {
+    pub fn fetch_metadatas(&self) -> Result<Vec<Metadata>, Error> {
         let mut metadatas = Vec::<Metadata>::new();
-        try!(self.fetch_children(&mut metadatas));
+        let _ = self.fetch_children(&mut metadatas)?;
         Ok(metadatas)
     }
 
-    fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, BambouError> {
+    pub fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, Error> {
         let mut globalmetadatas = Vec::<GlobalMetadata>::new();
-        try!(self.fetch_children(&mut globalmetadatas));
+        let _ = self.fetch_children(&mut globalmetadatas)?;
         Ok(globalmetadatas)
     }
 
-    fn fetch_jobs(&self) -> Result<Vec<Job>, BambouError> {
+    pub fn fetch_jobs(&self) -> Result<Vec<Job>, Error> {
         let mut jobs = Vec::<Job>::new();
-        try!(self.fetch_children(&mut jobs));
+        let _ = self.fetch_children(&mut jobs)?;
         Ok(jobs)
     }
 
-    fn fetch_statistics(&self) -> Result<Vec<Statistics>, BambouError> {
+    pub fn fetch_statistics(&self) -> Result<Vec<Statistics>, Error> {
         let mut statistics = Vec::<Statistics>::new();
-        try!(self.fetch_children(&mut statistics));
+        let _ = self.fetch_children(&mut statistics)?;
         Ok(statistics)
     }
 }

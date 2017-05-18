@@ -1,4 +1,5 @@
-// Copyright (c) 2015-2016, Nokia Inc
+// Copyright (c) 2015 Alcatel-Lucent, (c) 2016 Nokia
+//
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -24,8 +25,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-use bambou::{BambouError, RestEntity, Session, SessionConfig};
-use hyper::client::{Response};
+use bambou::{Error, RestEntity, Session};
+use reqwest::Response;
 use std::collections::BTreeMap;
 use serde_json;
 
@@ -34,79 +35,115 @@ pub use monitorscope::Monitorscope;
 pub use applicationbinding::ApplicationBinding;
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct Application<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
     _session: Option<&'a Session>,
+
     #[serde(rename="ID")]
     id: Option<String>,
-    
+
     #[serde(rename="parentID")]
     parent_id: Option<String>,
+
     #[serde(rename="parentType")]
     parent_type: Option<String>,
+
     owner: Option<String>,
+
     
     #[serde(rename="DSCP")]
-    dscp: Option<String>,
-    name: Option<String>,
+    pub dscp: Option<String>,
+    
+    pub name: Option<String>,
+    
+    pub bandwidth: u64,
     
     #[serde(rename="readOnly")]
-    read_only: bool,
+    pub read_only: bool,
     
     #[serde(rename="performanceMonitorType")]
-    performance_monitor_type: Option<String>,
-    description: Option<String>,
+    pub performance_monitor_type: Option<String>,
+    
+    pub description: Option<String>,
     
     #[serde(rename="destinationIP")]
-    destination_ip: Option<String>,
+    pub destination_ip: Option<String>,
     
     #[serde(rename="destinationPort")]
-    destination_port: Option<String>,
+    pub destination_port: Option<String>,
     
     #[serde(rename="enablePPS")]
-    enable_pps: bool,
+    pub enable_pps: bool,
     
     #[serde(rename="oneWayDelay")]
-    one_way_delay: u64,
+    pub one_way_delay: u64,
     
     #[serde(rename="oneWayJitter")]
-    one_way_jitter: u64,
+    pub one_way_jitter: u64,
     
     #[serde(rename="oneWayLoss")]
-    one_way_loss: f64,
+    pub one_way_loss: f64,
     
     #[serde(rename="postClassificationPath")]
-    post_classification_path: Option<String>,
+    pub post_classification_path: Option<String>,
     
     #[serde(rename="sourceIP")]
-    source_ip: Option<String>,
+    pub source_ip: Option<String>,
     
     #[serde(rename="sourcePort")]
-    source_port: Option<String>,
+    pub source_port: Option<String>,
+    
+    #[serde(rename="appId")]
+    pub app_id: u64,
     
     #[serde(rename="optimizePathSelection")]
-    optimize_path_selection: Option<String>,
+    pub optimize_path_selection: Option<String>,
     
     #[serde(rename="preClassificationPath")]
-    pre_classification_path: Option<String>,
-    protocol: Option<String>,
+    pub pre_classification_path: Option<String>,
+    
+    pub protocol: Option<String>,
     
     #[serde(rename="associatedL7ApplicationSignatureID")]
-    associated_l7_application_signature_id: Option<String>,
+    pub associated_l7_application_signature_id: Option<String>,
     
     #[serde(rename="etherType")]
-    ether_type: Option<String>,
-    symmetry: bool,
+    pub ether_type: Option<String>,
+    
+    pub symmetry: bool,
     
 }
 
 impl<'a> RestEntity<'a> for Application<'a> {
-    fn fetch(&mut self) -> Result<Response, BambouError> {
+    fn fetch(&mut self) -> Result<Response, Error> {
         match self._session {
-            Some(session) => session.fetch(self),
-            None => Err(BambouError::NoSession),
+            Some(session) => session.fetch_entity(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn save(&mut self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.save(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn delete(self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.delete(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn create_child<C>(&self, child: &mut C) -> Result<Response, Error>
+        where C: RestEntity<'a>
+    {
+        match self._session {
+            Some(session) => session.create_child(self, child),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -126,12 +163,12 @@ impl<'a> RestEntity<'a> for Application<'a> {
         self.id.as_ref().and_then(|id| Some(id.as_str()))
     }
 
-    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, BambouError>
+    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, Error>
         where R: RestEntity<'a>
     {
         match self._session {
             Some(session) => session.fetch_children(self, children),
-            None => Err(BambouError::NoSession),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -142,43 +179,19 @@ impl<'a> RestEntity<'a> for Application<'a> {
     fn set_session(&mut self, session: &'a Session) {
         self._session = Some(session);
     }
-
-    fn save(&mut self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.save(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn delete(self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.delete(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn create_child<C>(&self, child: &mut C) -> Result<Response, BambouError>
-        where C: RestEntity<'a>
-    {
-        match self._session {
-            Some(session) => session.create_child(self, child),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
 }
 
 impl<'a> Application<'a> {
 
-    fn fetch_monitorscopes(&self) -> Result<Vec<Monitorscope>, BambouError> {
+    pub fn fetch_monitorscopes(&self) -> Result<Vec<Monitorscope>, Error> {
         let mut monitorscopes = Vec::<Monitorscope>::new();
-        try!(self.fetch_children(&mut monitorscopes));
+        let _ = self.fetch_children(&mut monitorscopes)?;
         Ok(monitorscopes)
     }
 
-    fn fetch_applicationbindings(&self) -> Result<Vec<ApplicationBinding>, BambouError> {
+    pub fn fetch_applicationbindings(&self) -> Result<Vec<ApplicationBinding>, Error> {
         let mut applicationbindings = Vec::<ApplicationBinding>::new();
-        try!(self.fetch_children(&mut applicationbindings));
+        let _ = self.fetch_children(&mut applicationbindings)?;
         Ok(applicationbindings)
     }
 }

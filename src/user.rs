@@ -1,4 +1,5 @@
-// Copyright (c) 2015-2016, Nokia Inc
+// Copyright (c) 2015 Alcatel-Lucent, (c) 2016 Nokia
+//
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -24,8 +25,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-use bambou::{BambouError, RestEntity, Session, SessionConfig};
-use hyper::client::{Response};
+use bambou::{Error, RestEntity, Session};
+use reqwest::Response;
 use std::collections::BTreeMap;
 use serde_json;
 
@@ -39,60 +40,90 @@ pub use avatar::Avatar;
 pub use eventlog::EventLog;
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct User<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
     _session: Option<&'a Session>,
+
     #[serde(rename="ID")]
     id: Option<String>,
-    
+
     #[serde(rename="parentID")]
     parent_id: Option<String>,
+
     #[serde(rename="parentType")]
     parent_type: Option<String>,
+
     owner: Option<String>,
+
     
     #[serde(rename="managementMode")]
-    management_mode: Option<String>,
-    password: Option<String>,
+    pub management_mode: Option<String>,
+    
+    pub password: Option<String>,
     
     #[serde(rename="lastName")]
-    last_name: Option<String>,
+    pub last_name: Option<String>,
     
     #[serde(rename="lastUpdatedBy")]
-    last_updated_by: Option<String>,
+    pub last_updated_by: Option<String>,
     
     #[serde(rename="firstName")]
-    first_name: Option<String>,
-    disabled: bool,
-    email: Option<String>,
+    pub first_name: Option<String>,
+    
+    pub disabled: bool,
+    
+    pub email: Option<String>,
     
     #[serde(rename="entityScope")]
-    entity_scope: Option<String>,
+    pub entity_scope: Option<String>,
     
     #[serde(rename="mobileNumber")]
-    mobile_number: Option<String>,
+    pub mobile_number: Option<String>,
     
     #[serde(rename="userName")]
-    user_name: Option<String>,
+    pub user_name: Option<String>,
     
     #[serde(rename="avatarData")]
-    avatar_data: Option<String>,
+    pub avatar_data: Option<String>,
     
     #[serde(rename="avatarType")]
-    avatar_type: Option<String>,
+    pub avatar_type: Option<String>,
     
     #[serde(rename="externalID")]
-    external_id: Option<String>,
+    pub external_id: Option<String>,
     
 }
 
 impl<'a> RestEntity<'a> for User<'a> {
-    fn fetch(&mut self) -> Result<Response, BambouError> {
+    fn fetch(&mut self) -> Result<Response, Error> {
         match self._session {
-            Some(session) => session.fetch(self),
-            None => Err(BambouError::NoSession),
+            Some(session) => session.fetch_entity(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn save(&mut self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.save(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn delete(self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.delete(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn create_child<C>(&self, child: &mut C) -> Result<Response, Error>
+        where C: RestEntity<'a>
+    {
+        match self._session {
+            Some(session) => session.create_child(self, child),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -112,12 +143,12 @@ impl<'a> RestEntity<'a> for User<'a> {
         self.id.as_ref().and_then(|id| Some(id.as_str()))
     }
 
-    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, BambouError>
+    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, Error>
         where R: RestEntity<'a>
     {
         match self._session {
             Some(session) => session.fetch_children(self, children),
-            None => Err(BambouError::NoSession),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -128,73 +159,49 @@ impl<'a> RestEntity<'a> for User<'a> {
     fn set_session(&mut self, session: &'a Session) {
         self._session = Some(session);
     }
-
-    fn save(&mut self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.save(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn delete(self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.delete(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn create_child<C>(&self, child: &mut C) -> Result<Response, BambouError>
-        where C: RestEntity<'a>
-    {
-        match self._session {
-            Some(session) => session.create_child(self, child),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
 }
 
 impl<'a> User<'a> {
 
-    fn fetch_metadatas(&self) -> Result<Vec<Metadata>, BambouError> {
+    pub fn fetch_metadatas(&self) -> Result<Vec<Metadata>, Error> {
         let mut metadatas = Vec::<Metadata>::new();
-        try!(self.fetch_children(&mut metadatas));
+        let _ = self.fetch_children(&mut metadatas)?;
         Ok(metadatas)
     }
 
-    fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, BambouError> {
+    pub fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, Error> {
         let mut globalmetadatas = Vec::<GlobalMetadata>::new();
-        try!(self.fetch_children(&mut globalmetadatas));
+        let _ = self.fetch_children(&mut globalmetadatas)?;
         Ok(globalmetadatas)
     }
 
-    fn fetch_vms(&self) -> Result<Vec<VM>, BambouError> {
+    pub fn fetch_vms(&self) -> Result<Vec<VM>, Error> {
         let mut vms = Vec::<VM>::new();
-        try!(self.fetch_children(&mut vms));
+        let _ = self.fetch_children(&mut vms)?;
         Ok(vms)
     }
 
-    fn fetch_containers(&self) -> Result<Vec<Container>, BambouError> {
+    pub fn fetch_containers(&self) -> Result<Vec<Container>, Error> {
         let mut containers = Vec::<Container>::new();
-        try!(self.fetch_children(&mut containers));
+        let _ = self.fetch_children(&mut containers)?;
         Ok(containers)
     }
 
-    fn fetch_groups(&self) -> Result<Vec<Group>, BambouError> {
+    pub fn fetch_groups(&self) -> Result<Vec<Group>, Error> {
         let mut groups = Vec::<Group>::new();
-        try!(self.fetch_children(&mut groups));
+        let _ = self.fetch_children(&mut groups)?;
         Ok(groups)
     }
 
-    fn fetch_avatars(&self) -> Result<Vec<Avatar>, BambouError> {
+    pub fn fetch_avatars(&self) -> Result<Vec<Avatar>, Error> {
         let mut avatars = Vec::<Avatar>::new();
-        try!(self.fetch_children(&mut avatars));
+        let _ = self.fetch_children(&mut avatars)?;
         Ok(avatars)
     }
 
-    fn fetch_eventlogs(&self) -> Result<Vec<EventLog>, BambouError> {
+    pub fn fetch_eventlogs(&self) -> Result<Vec<EventLog>, Error> {
         let mut eventlogs = Vec::<EventLog>::new();
-        try!(self.fetch_children(&mut eventlogs));
+        let _ = self.fetch_children(&mut eventlogs)?;
         Ok(eventlogs)
     }
 }

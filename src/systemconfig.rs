@@ -1,4 +1,5 @@
-// Copyright (c) 2015-2016, Nokia Inc
+// Copyright (c) 2015 Alcatel-Lucent, (c) 2016 Nokia
+//
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -24,8 +25,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-use bambou::{BambouError, RestEntity, Session, SessionConfig};
-use hyper::client::{Response};
+use bambou::{Error, RestEntity, Session};
+use reqwest::Response;
 use std::collections::BTreeMap;
 use serde_json;
 
@@ -34,399 +35,438 @@ pub use metadata::Metadata;
 pub use globalmetadata::GlobalMetadata;
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct SystemConfig<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
     _session: Option<&'a Session>,
+
     #[serde(rename="ID")]
     id: Option<String>,
-    
+
     #[serde(rename="parentID")]
     parent_id: Option<String>,
+
     #[serde(rename="parentType")]
     parent_type: Option<String>,
+
     owner: Option<String>,
+
     
     #[serde(rename="ACLAllowOrigin")]
-    acl_allow_origin: Option<String>,
+    pub acl_allow_origin: Option<String>,
     
     #[serde(rename="ECMPCount")]
-    ecmp_count: u64,
+    pub ecmp_count: u64,
     
     #[serde(rename="LDAPSyncInterval")]
-    ldap_sync_interval: u64,
+    pub ldap_sync_interval: u64,
     
     #[serde(rename="LDAPTrustStoreCertifcate")]
-    ldap_trust_store_certifcate: Option<String>,
+    pub ldap_trust_store_certifcate: Option<String>,
     
     #[serde(rename="LDAPTrustStorePassword")]
-    ldap_trust_store_password: Option<String>,
+    pub ldap_trust_store_password: Option<String>,
     
     #[serde(rename="ADGatewayPurgeTime")]
-    ad_gateway_purge_time: u64,
+    pub ad_gateway_purge_time: u64,
     
     #[serde(rename="RDLowerLimit")]
-    rd_lower_limit: u64,
+    pub rd_lower_limit: u64,
     
     #[serde(rename="RDPublicNetworkLowerLimit")]
-    rd_public_network_lower_limit: u64,
+    pub rd_public_network_lower_limit: u64,
     
     #[serde(rename="RDPublicNetworkUpperLimit")]
-    rd_public_network_upper_limit: u64,
+    pub rd_public_network_upper_limit: u64,
     
     #[serde(rename="RDUpperLimit")]
-    rd_upper_limit: u64,
+    pub rd_upper_limit: u64,
     
     #[serde(rename="ZFBBootstrapEnabled")]
-    zfb_bootstrap_enabled: bool,
+    pub zfb_bootstrap_enabled: bool,
     
     #[serde(rename="ZFBRequestRetryTimer")]
-    zfb_request_retry_timer: u64,
+    pub zfb_request_retry_timer: u64,
     
     #[serde(rename="ZFBSchedulerStaleRequestTimeout")]
-    zfb_scheduler_stale_request_timeout: u64,
+    pub zfb_scheduler_stale_request_timeout: u64,
     
     #[serde(rename="DHCPOptionSize")]
-    dhcp_option_size: u64,
+    pub dhcp_option_size: u64,
+    
+    #[serde(rename="VLANIDLowerLimit")]
+    pub vlanid_lower_limit: u64,
+    
+    #[serde(rename="VLANIDUpperLimit")]
+    pub vlanid_upper_limit: u64,
     
     #[serde(rename="VMCacheSize")]
-    vm_cache_size: u64,
+    pub vm_cache_size: u64,
     
     #[serde(rename="VMPurgeTime")]
-    vm_purge_time: u64,
+    pub vm_purge_time: u64,
     
     #[serde(rename="VMResyncDeletionWaitTime")]
-    vm_resync_deletion_wait_time: u64,
+    pub vm_resync_deletion_wait_time: u64,
     
     #[serde(rename="VMResyncOutstandingInterval")]
-    vm_resync_outstanding_interval: u64,
+    pub vm_resync_outstanding_interval: u64,
     
     #[serde(rename="VMUnreachableCleanupTime")]
-    vm_unreachable_cleanup_time: u64,
+    pub vm_unreachable_cleanup_time: u64,
     
     #[serde(rename="VMUnreachableTime")]
-    vm_unreachable_time: u64,
+    pub vm_unreachable_time: u64,
     
     #[serde(rename="VNIDLowerLimit")]
-    vnid_lower_limit: u64,
+    pub vnid_lower_limit: u64,
     
     #[serde(rename="VNIDPublicNetworkLowerLimit")]
-    vnid_public_network_lower_limit: u64,
+    pub vnid_public_network_lower_limit: u64,
     
     #[serde(rename="VNIDPublicNetworkUpperLimit")]
-    vnid_public_network_upper_limit: u64,
+    pub vnid_public_network_upper_limit: u64,
     
     #[serde(rename="VNIDUpperLimit")]
-    vnid_upper_limit: u64,
+    pub vnid_upper_limit: u64,
     
     #[serde(rename="APIKeyRenewalInterval")]
-    api_key_renewal_interval: u64,
+    pub api_key_renewal_interval: u64,
     
     #[serde(rename="APIKeyValidity")]
-    api_key_validity: u64,
+    pub api_key_validity: u64,
     
     #[serde(rename="VPortInitStatefulTimer")]
-    vport_init_stateful_timer: u64,
+    pub vport_init_stateful_timer: u64,
     
     #[serde(rename="LRUCacheSizePerSubnet")]
-    lru_cache_size_per_subnet: u64,
+    pub lru_cache_size_per_subnet: u64,
     
     #[serde(rename="VSCOnSameVersionAsVSD")]
-    vsc_on_same_version_as_vsd: bool,
+    pub vsc_on_same_version_as_vsd: bool,
     
     #[serde(rename="VSDReadOnlyMode")]
-    vsd_read_only_mode: bool,
+    pub vsd_read_only_mode: bool,
     
     #[serde(rename="VSDUpgradeIsComplete")]
-    vsd_upgrade_is_complete: bool,
+    pub vsd_upgrade_is_complete: bool,
     
     #[serde(rename="ASNumber")]
-    as_number: u64,
+    pub as_number: u64,
     
     #[serde(rename="RTLowerLimit")]
-    rt_lower_limit: u64,
+    pub rt_lower_limit: u64,
     
     #[serde(rename="RTPublicNetworkLowerLimit")]
-    rt_public_network_lower_limit: u64,
+    pub rt_public_network_lower_limit: u64,
     
     #[serde(rename="RTPublicNetworkUpperLimit")]
-    rt_public_network_upper_limit: u64,
+    pub rt_public_network_upper_limit: u64,
     
     #[serde(rename="RTUpperLimit")]
-    rt_upper_limit: u64,
+    pub rt_upper_limit: u64,
     
     #[serde(rename="EVPNBGPCommunityTagASNumber")]
-    evpnbgp_community_tag_as_number: u64,
+    pub evpnbgp_community_tag_as_number: u64,
     
     #[serde(rename="EVPNBGPCommunityTagLowerLimit")]
-    evpnbgp_community_tag_lower_limit: u64,
+    pub evpnbgp_community_tag_lower_limit: u64,
     
     #[serde(rename="EVPNBGPCommunityTagUpperLimit")]
-    evpnbgp_community_tag_upper_limit: u64,
+    pub evpnbgp_community_tag_upper_limit: u64,
     
     #[serde(rename="pageMaxSize")]
-    page_max_size: u64,
+    pub page_max_size: u64,
     
     #[serde(rename="pageSize")]
-    page_size: u64,
+    pub page_size: u64,
     
     #[serde(rename="lastUpdatedBy")]
-    last_updated_by: Option<String>,
+    pub last_updated_by: Option<String>,
     
     #[serde(rename="maxFailedLogins")]
-    max_failed_logins: u64,
+    pub max_failed_logins: u64,
     
     #[serde(rename="maxResponse")]
-    max_response: u64,
+    pub max_response: u64,
+    
+    #[serde(rename="accumulateLicensesEnabled")]
+    pub accumulate_licenses_enabled: bool,
+    
+    #[serde(rename="perDomainVlanIdEnabled")]
+    pub per_domain_vlan_id_enabled: bool,
     
     #[serde(rename="performancePathSelectionVNID")]
-    performance_path_selection_vnid: u64,
+    pub performance_path_selection_vnid: u64,
     
     #[serde(rename="serviceIDUpperLimit")]
-    service_id_upper_limit: u64,
+    pub service_id_upper_limit: u64,
     
     #[serde(rename="keyServerMonitorEnabled")]
-    key_server_monitor_enabled: bool,
+    pub key_server_monitor_enabled: bool,
     
     #[serde(rename="keyServerVSDDataSynchronizationInterval")]
-    key_server_vsd_data_synchronization_interval: u64,
+    pub key_server_vsd_data_synchronization_interval: u64,
     
     #[serde(rename="offsetCustomerID")]
-    offset_customer_id: u64,
+    pub offset_customer_id: u64,
     
     #[serde(rename="offsetServiceID")]
-    offset_service_id: u64,
+    pub offset_service_id: u64,
     
     #[serde(rename="ejbcaNSGCertificateProfile")]
-    ejbca_nsg_certificate_profile: Option<String>,
+    pub ejbca_nsg_certificate_profile: Option<String>,
     
     #[serde(rename="ejbcaNSGEndEntityProfile")]
-    ejbca_nsg_end_entity_profile: Option<String>,
+    pub ejbca_nsg_end_entity_profile: Option<String>,
     
     #[serde(rename="ejbcaOCSPResponderCN")]
-    ejbca_ocsp_responder_cn: Option<String>,
+    pub ejbca_ocsp_responder_cn: Option<String>,
     
     #[serde(rename="ejbcaOCSPResponderURI")]
-    ejbca_ocsp_responder_uri: Option<String>,
+    pub ejbca_ocsp_responder_uri: Option<String>,
     
     #[serde(rename="ejbcaVspRootCa")]
-    ejbca_vsp_root_ca: Option<String>,
+    pub ejbca_vsp_root_ca: Option<String>,
     
     #[serde(rename="alarmsMaxPerObject")]
-    alarms_max_per_object: u64,
+    pub alarms_max_per_object: u64,
     
     #[serde(rename="elasticClusterName")]
-    elastic_cluster_name: Option<String>,
-    
-    #[serde(rename="elasticSearchUIAddress")]
-    elastic_search_ui_address: Option<String>,
+    pub elastic_cluster_name: Option<String>,
     
     #[serde(rename="allowEnterpriseAvatarOnNSG")]
-    allow_enterprise_avatar_on_nsg: bool,
+    pub allow_enterprise_avatar_on_nsg: bool,
     
     #[serde(rename="globalMACAddress")]
-    global_mac_address: Option<String>,
+    pub global_mac_address: Option<String>,
+    
+    #[serde(rename="flowCollectionEnabled")]
+    pub flow_collection_enabled: bool,
     
     #[serde(rename="inactiveTimeout")]
-    inactive_timeout: u64,
+    pub inactive_timeout: u64,
     
     #[serde(rename="entityScope")]
-    entity_scope: Option<String>,
+    pub entity_scope: Option<String>,
     
     #[serde(rename="domainTunnelType")]
-    domain_tunnel_type: Option<String>,
+    pub domain_tunnel_type: Option<String>,
     
     #[serde(rename="postProcessorThreadsCount")]
-    post_processor_threads_count: u64,
+    pub post_processor_threads_count: u64,
     
     #[serde(rename="groupKeyDefaultSEKGenerationInterval")]
-    group_key_default_sek_generation_interval: u64,
+    pub group_key_default_sek_generation_interval: u64,
     
     #[serde(rename="groupKeyDefaultSEKLifetime")]
-    group_key_default_sek_lifetime: u64,
+    pub group_key_default_sek_lifetime: u64,
     
     #[serde(rename="groupKeyDefaultSEKPayloadEncryptionAlgorithm")]
-    group_key_default_sek_payload_encryption_algorithm: Option<String>,
+    pub group_key_default_sek_payload_encryption_algorithm: Option<String>,
     
     #[serde(rename="groupKeyDefaultSEKPayloadSigningAlgorithm")]
-    group_key_default_sek_payload_signing_algorithm: Option<String>,
+    pub group_key_default_sek_payload_signing_algorithm: Option<String>,
     
     #[serde(rename="groupKeyDefaultSeedGenerationInterval")]
-    group_key_default_seed_generation_interval: u64,
+    pub group_key_default_seed_generation_interval: u64,
     
     #[serde(rename="groupKeyDefaultSeedLifetime")]
-    group_key_default_seed_lifetime: u64,
+    pub group_key_default_seed_lifetime: u64,
     
     #[serde(rename="groupKeyDefaultSeedPayloadAuthenticationAlgorithm")]
-    group_key_default_seed_payload_authentication_algorithm: Option<String>,
+    pub group_key_default_seed_payload_authentication_algorithm: Option<String>,
     
     #[serde(rename="groupKeyDefaultSeedPayloadEncryptionAlgorithm")]
-    group_key_default_seed_payload_encryption_algorithm: Option<String>,
+    pub group_key_default_seed_payload_encryption_algorithm: Option<String>,
     
     #[serde(rename="groupKeyDefaultSeedPayloadSigningAlgorithm")]
-    group_key_default_seed_payload_signing_algorithm: Option<String>,
+    pub group_key_default_seed_payload_signing_algorithm: Option<String>,
     
     #[serde(rename="groupKeyDefaultTrafficAuthenticationAlgorithm")]
-    group_key_default_traffic_authentication_algorithm: Option<String>,
+    pub group_key_default_traffic_authentication_algorithm: Option<String>,
     
     #[serde(rename="groupKeyDefaultTrafficEncryptionAlgorithm")]
-    group_key_default_traffic_encryption_algorithm: Option<String>,
+    pub group_key_default_traffic_encryption_algorithm: Option<String>,
     
     #[serde(rename="groupKeyDefaultTrafficEncryptionKeyLifetime")]
-    group_key_default_traffic_encryption_key_lifetime: u64,
+    pub group_key_default_traffic_encryption_key_lifetime: u64,
     
     #[serde(rename="groupKeyGenerationIntervalOnForcedReKey")]
-    group_key_generation_interval_on_forced_re_key: u64,
+    pub group_key_generation_interval_on_forced_re_key: u64,
     
     #[serde(rename="groupKeyGenerationIntervalOnRevoke")]
-    group_key_generation_interval_on_revoke: u64,
+    pub group_key_generation_interval_on_revoke: u64,
     
     #[serde(rename="groupKeyMinimumSEKGenerationInterval")]
-    group_key_minimum_sek_generation_interval: u64,
+    pub group_key_minimum_sek_generation_interval: u64,
     
     #[serde(rename="groupKeyMinimumSEKLifetime")]
-    group_key_minimum_sek_lifetime: u64,
+    pub group_key_minimum_sek_lifetime: u64,
     
     #[serde(rename="groupKeyMinimumSeedGenerationInterval")]
-    group_key_minimum_seed_generation_interval: u64,
+    pub group_key_minimum_seed_generation_interval: u64,
     
     #[serde(rename="groupKeyMinimumSeedLifetime")]
-    group_key_minimum_seed_lifetime: u64,
+    pub group_key_minimum_seed_lifetime: u64,
     
     #[serde(rename="groupKeyMinimumTrafficEncryptionKeyLifetime")]
-    group_key_minimum_traffic_encryption_key_lifetime: u64,
+    pub group_key_minimum_traffic_encryption_key_lifetime: u64,
     
     #[serde(rename="nsgBootstrapEndpoint")]
-    nsg_bootstrap_endpoint: Option<String>,
+    pub nsg_bootstrap_endpoint: Option<String>,
     
     #[serde(rename="nsgConfigEndpoint")]
-    nsg_config_endpoint: Option<String>,
+    pub nsg_config_endpoint: Option<String>,
     
     #[serde(rename="nsgLocalUiUrl")]
-    nsg_local_ui_url: Option<String>,
+    pub nsg_local_ui_url: Option<String>,
     
     #[serde(rename="esiID")]
-    esi_id: u64,
+    pub esi_id: u64,
     
     #[serde(rename="csprootAuthenticationMethod")]
-    csproot_authentication_method: Option<String>,
+    pub csproot_authentication_method: Option<String>,
     
     #[serde(rename="stackTraceEnabled")]
-    stack_trace_enabled: bool,
+    pub stack_trace_enabled: bool,
     
     #[serde(rename="statefulACLNonTCPTimeout")]
-    stateful_acl_non_tcp_timeout: u64,
+    pub stateful_acl_non_tcp_timeout: u64,
     
     #[serde(rename="statefulACLTCPTimeout")]
-    stateful_acltcp_timeout: u64,
+    pub stateful_acltcp_timeout: u64,
     
     #[serde(rename="staticWANServicePurgeTime")]
-    static_wan_service_purge_time: u64,
+    pub static_wan_service_purge_time: u64,
     
     #[serde(rename="statisticsEnabled")]
-    statistics_enabled: bool,
+    pub statistics_enabled: bool,
     
     #[serde(rename="statsCollectorAddress")]
-    stats_collector_address: Option<String>,
+    pub stats_collector_address: Option<String>,
     
     #[serde(rename="statsCollectorPort")]
-    stats_collector_port: Option<String>,
+    pub stats_collector_port: Option<String>,
     
     #[serde(rename="statsCollectorProtoBufPort")]
-    stats_collector_proto_buf_port: Option<String>,
+    pub stats_collector_proto_buf_port: Option<String>,
     
     #[serde(rename="statsMaxDataPoints")]
-    stats_max_data_points: u64,
+    pub stats_max_data_points: u64,
     
     #[serde(rename="statsMinDuration")]
-    stats_min_duration: u64,
+    pub stats_min_duration: u64,
     
     #[serde(rename="statsNumberOfDataPoints")]
-    stats_number_of_data_points: u64,
+    pub stats_number_of_data_points: u64,
     
     #[serde(rename="statsTSDBServerAddress")]
-    stats_tsdb_server_address: Option<String>,
+    pub stats_tsdb_server_address: Option<String>,
     
     #[serde(rename="stickyECMPIdleTimeout")]
-    sticky_ecmp_idle_timeout: u64,
+    pub sticky_ecmp_idle_timeout: u64,
     
     #[serde(rename="subnetResyncInterval")]
-    subnet_resync_interval: u64,
+    pub subnet_resync_interval: u64,
     
     #[serde(rename="subnetResyncOutstandingInterval")]
-    subnet_resync_outstanding_interval: u64,
+    pub subnet_resync_outstanding_interval: u64,
     
     #[serde(rename="customerIDUpperLimit")]
-    customer_id_upper_limit: u64,
+    pub customer_id_upper_limit: u64,
     
     #[serde(rename="customerKey")]
-    customer_key: Option<String>,
+    pub customer_key: Option<String>,
     
     #[serde(rename="avatarBasePath")]
-    avatar_base_path: Option<String>,
+    pub avatar_base_path: Option<String>,
     
     #[serde(rename="avatarBaseURL")]
-    avatar_base_url: Option<String>,
+    pub avatar_base_url: Option<String>,
     
     #[serde(rename="eventLogCleanupInterval")]
-    event_log_cleanup_interval: u64,
+    pub event_log_cleanup_interval: u64,
     
     #[serde(rename="eventLogEntryMaxAge")]
-    event_log_entry_max_age: u64,
+    pub event_log_entry_max_age: u64,
     
     #[serde(rename="eventProcessorInterval")]
-    event_processor_interval: u64,
+    pub event_processor_interval: u64,
     
     #[serde(rename="eventProcessorMaxEventsCount")]
-    event_processor_max_events_count: u64,
+    pub event_processor_max_events_count: u64,
     
     #[serde(rename="eventProcessorTimeout")]
-    event_processor_timeout: u64,
+    pub event_processor_timeout: u64,
     
     #[serde(rename="twoFactorCodeExpiry")]
-    two_factor_code_expiry: u64,
+    pub two_factor_code_expiry: u64,
     
     #[serde(rename="twoFactorCodeLength")]
-    two_factor_code_length: u64,
+    pub two_factor_code_length: u64,
     
     #[serde(rename="twoFactorCodeSeedLength")]
-    two_factor_code_seed_length: u64,
+    pub two_factor_code_seed_length: u64,
     
     #[serde(rename="externalID")]
-    external_id: Option<String>,
+    pub external_id: Option<String>,
     
     #[serde(rename="dynamicWANServiceDiffTime")]
-    dynamic_wan_service_diff_time: u64,
+    pub dynamic_wan_service_diff_time: u64,
     
     #[serde(rename="syslogDestinationHost")]
-    syslog_destination_host: Option<String>,
+    pub syslog_destination_host: Option<String>,
     
     #[serde(rename="syslogDestinationPort")]
-    syslog_destination_port: u64,
+    pub syslog_destination_port: u64,
     
     #[serde(rename="sysmonCleanupTaskInterval")]
-    sysmon_cleanup_task_interval: u64,
+    pub sysmon_cleanup_task_interval: u64,
     
     #[serde(rename="sysmonNodePresenceTimeout")]
-    sysmon_node_presence_timeout: u64,
+    pub sysmon_node_presence_timeout: u64,
     
     #[serde(rename="sysmonProbeResponseTimeout")]
-    sysmon_probe_response_timeout: u64,
+    pub sysmon_probe_response_timeout: u64,
     
     #[serde(rename="systemAvatarData")]
-    system_avatar_data: Option<String>,
+    pub system_avatar_data: Option<String>,
     
     #[serde(rename="systemAvatarType")]
-    system_avatar_type: Option<String>,
+    pub system_avatar_type: Option<String>,
     
 }
 
 impl<'a> RestEntity<'a> for SystemConfig<'a> {
-    fn fetch(&mut self) -> Result<Response, BambouError> {
+    fn fetch(&mut self) -> Result<Response, Error> {
         match self._session {
-            Some(session) => session.fetch(self),
-            None => Err(BambouError::NoSession),
+            Some(session) => session.fetch_entity(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn save(&mut self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.save(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn delete(self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.delete(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn create_child<C>(&self, child: &mut C) -> Result<Response, Error>
+        where C: RestEntity<'a>
+    {
+        match self._session {
+            Some(session) => session.create_child(self, child),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -446,12 +486,12 @@ impl<'a> RestEntity<'a> for SystemConfig<'a> {
         self.id.as_ref().and_then(|id| Some(id.as_str()))
     }
 
-    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, BambouError>
+    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, Error>
         where R: RestEntity<'a>
     {
         match self._session {
             Some(session) => session.fetch_children(self, children),
-            None => Err(BambouError::NoSession),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -462,43 +502,19 @@ impl<'a> RestEntity<'a> for SystemConfig<'a> {
     fn set_session(&mut self, session: &'a Session) {
         self._session = Some(session);
     }
-
-    fn save(&mut self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.save(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn delete(self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.delete(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn create_child<C>(&self, child: &mut C) -> Result<Response, BambouError>
-        where C: RestEntity<'a>
-    {
-        match self._session {
-            Some(session) => session.create_child(self, child),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
 }
 
 impl<'a> SystemConfig<'a> {
 
-    fn fetch_metadatas(&self) -> Result<Vec<Metadata>, BambouError> {
+    pub fn fetch_metadatas(&self) -> Result<Vec<Metadata>, Error> {
         let mut metadatas = Vec::<Metadata>::new();
-        try!(self.fetch_children(&mut metadatas));
+        let _ = self.fetch_children(&mut metadatas)?;
         Ok(metadatas)
     }
 
-    fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, BambouError> {
+    pub fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, Error> {
         let mut globalmetadatas = Vec::<GlobalMetadata>::new();
-        try!(self.fetch_children(&mut globalmetadatas));
+        let _ = self.fetch_children(&mut globalmetadatas)?;
         Ok(globalmetadatas)
     }
 }

@@ -1,4 +1,5 @@
-// Copyright (c) 2015-2016, Nokia Inc
+// Copyright (c) 2015 Alcatel-Lucent, (c) 2016 Nokia
+//
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -24,8 +25,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-use bambou::{BambouError, RestEntity, Session, SessionConfig};
-use hyper::client::{Response};
+use bambou::{Error, RestEntity, Session};
+use reqwest::Response;
 use std::collections::BTreeMap;
 use serde_json;
 
@@ -39,96 +40,126 @@ pub use vrs::VRS;
 pub use eventlog::EventLog;
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct Container<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
     _session: Option<&'a Session>,
+
     #[serde(rename="ID")]
     id: Option<String>,
-    
+
     #[serde(rename="parentID")]
     parent_id: Option<String>,
+
     #[serde(rename="parentType")]
     parent_type: Option<String>,
+
     owner: Option<String>,
+
     
     #[serde(rename="l2DomainIDs")]
-    l2_domain_ids: Vec<Option<String>>,
+    pub l2_domain_ids: Vec<Option<String>>,
     
     #[serde(rename="VRSID")]
-    vrsid: Option<String>,
+    pub vrsid: Option<String>,
     
     #[serde(rename="UUID")]
-    uuid: Option<String>,
-    name: Option<String>,
+    pub uuid: Option<String>,
+    
+    pub name: Option<String>,
     
     #[serde(rename="lastUpdatedBy")]
-    last_updated_by: Option<String>,
+    pub last_updated_by: Option<String>,
     
     #[serde(rename="reasonType")]
-    reason_type: Option<String>,
+    pub reason_type: Option<String>,
     
     #[serde(rename="deleteExpiry")]
-    delete_expiry: u64,
+    pub delete_expiry: u64,
     
     #[serde(rename="deleteMode")]
-    delete_mode: Option<String>,
+    pub delete_mode: Option<String>,
     
     #[serde(rename="resyncInfo")]
-    resync_info: BTreeMap<String, serde_json::Value>,
+    pub resync_info: BTreeMap<String, serde_json::Value>,
     
     #[serde(rename="siteIdentifier")]
-    site_identifier: Option<String>,
+    pub site_identifier: Option<String>,
     
     #[serde(rename="imageID")]
-    image_id: Option<String>,
+    pub image_id: Option<String>,
     
     #[serde(rename="imageName")]
-    image_name: Option<String>,
-    interfaces: Vec<BTreeMap<String, serde_json::Value>>,
+    pub image_name: Option<String>,
+    
+    pub interfaces: Vec<BTreeMap<String, serde_json::Value>>,
     
     #[serde(rename="enterpriseID")]
-    enterprise_id: Option<String>,
+    pub enterprise_id: Option<String>,
     
     #[serde(rename="enterpriseName")]
-    enterprise_name: Option<String>,
+    pub enterprise_name: Option<String>,
     
     #[serde(rename="entityScope")]
-    entity_scope: Option<String>,
+    pub entity_scope: Option<String>,
     
     #[serde(rename="domainIDs")]
-    domain_ids: Vec<Option<String>>,
+    pub domain_ids: Vec<Option<String>>,
     
     #[serde(rename="zoneIDs")]
-    zone_ids: Vec<Option<String>>,
+    pub zone_ids: Vec<Option<String>>,
     
     #[serde(rename="orchestrationID")]
-    orchestration_id: Option<String>,
+    pub orchestration_id: Option<String>,
     
     #[serde(rename="userID")]
-    user_id: Option<String>,
+    pub user_id: Option<String>,
     
     #[serde(rename="userName")]
-    user_name: Option<String>,
-    status: Option<String>,
+    pub user_name: Option<String>,
+    
+    pub status: Option<String>,
     
     #[serde(rename="subnetIDs")]
-    subnet_ids: Vec<Option<String>>,
+    pub subnet_ids: Vec<Option<String>>,
     
     #[serde(rename="externalID")]
-    external_id: Option<String>,
+    pub external_id: Option<String>,
     
     #[serde(rename="hypervisorIP")]
-    hypervisor_ip: Option<String>,
+    pub hypervisor_ip: Option<String>,
     
 }
 
 impl<'a> RestEntity<'a> for Container<'a> {
-    fn fetch(&mut self) -> Result<Response, BambouError> {
+    fn fetch(&mut self) -> Result<Response, Error> {
         match self._session {
-            Some(session) => session.fetch(self),
-            None => Err(BambouError::NoSession),
+            Some(session) => session.fetch_entity(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn save(&mut self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.save(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn delete(self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.delete(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn create_child<C>(&self, child: &mut C) -> Result<Response, Error>
+        where C: RestEntity<'a>
+    {
+        match self._session {
+            Some(session) => session.create_child(self, child),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -148,12 +179,12 @@ impl<'a> RestEntity<'a> for Container<'a> {
         self.id.as_ref().and_then(|id| Some(id.as_str()))
     }
 
-    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, BambouError>
+    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, Error>
         where R: RestEntity<'a>
     {
         match self._session {
             Some(session) => session.fetch_children(self, children),
-            None => Err(BambouError::NoSession),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -164,73 +195,49 @@ impl<'a> RestEntity<'a> for Container<'a> {
     fn set_session(&mut self, session: &'a Session) {
         self._session = Some(session);
     }
-
-    fn save(&mut self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.save(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn delete(self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.delete(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn create_child<C>(&self, child: &mut C) -> Result<Response, BambouError>
-        where C: RestEntity<'a>
-    {
-        match self._session {
-            Some(session) => session.create_child(self, child),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
 }
 
 impl<'a> Container<'a> {
 
-    fn fetch_metadatas(&self) -> Result<Vec<Metadata>, BambouError> {
+    pub fn fetch_metadatas(&self) -> Result<Vec<Metadata>, Error> {
         let mut metadatas = Vec::<Metadata>::new();
-        try!(self.fetch_children(&mut metadatas));
+        let _ = self.fetch_children(&mut metadatas)?;
         Ok(metadatas)
     }
 
-    fn fetch_alarms(&self) -> Result<Vec<Alarm>, BambouError> {
+    pub fn fetch_alarms(&self) -> Result<Vec<Alarm>, Error> {
         let mut alarms = Vec::<Alarm>::new();
-        try!(self.fetch_children(&mut alarms));
+        let _ = self.fetch_children(&mut alarms)?;
         Ok(alarms)
     }
 
-    fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, BambouError> {
+    pub fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, Error> {
         let mut globalmetadatas = Vec::<GlobalMetadata>::new();
-        try!(self.fetch_children(&mut globalmetadatas));
+        let _ = self.fetch_children(&mut globalmetadatas)?;
         Ok(globalmetadatas)
     }
 
-    fn fetch_containerinterfaces(&self) -> Result<Vec<ContainerInterface>, BambouError> {
+    pub fn fetch_containerinterfaces(&self) -> Result<Vec<ContainerInterface>, Error> {
         let mut containerinterfaces = Vec::<ContainerInterface>::new();
-        try!(self.fetch_children(&mut containerinterfaces));
+        let _ = self.fetch_children(&mut containerinterfaces)?;
         Ok(containerinterfaces)
     }
 
-    fn fetch_containerresync(&self) -> Result<Vec<ContainerResync>, BambouError> {
+    pub fn fetch_containerresync(&self) -> Result<Vec<ContainerResync>, Error> {
         let mut containerresync = Vec::<ContainerResync>::new();
-        try!(self.fetch_children(&mut containerresync));
+        let _ = self.fetch_children(&mut containerresync)?;
         Ok(containerresync)
     }
 
-    fn fetch_vrss(&self) -> Result<Vec<VRS>, BambouError> {
+    pub fn fetch_vrss(&self) -> Result<Vec<VRS>, Error> {
         let mut vrss = Vec::<VRS>::new();
-        try!(self.fetch_children(&mut vrss));
+        let _ = self.fetch_children(&mut vrss)?;
         Ok(vrss)
     }
 
-    fn fetch_eventlogs(&self) -> Result<Vec<EventLog>, BambouError> {
+    pub fn fetch_eventlogs(&self) -> Result<Vec<EventLog>, Error> {
         let mut eventlogs = Vec::<EventLog>::new();
-        try!(self.fetch_children(&mut eventlogs));
+        let _ = self.fetch_children(&mut eventlogs)?;
         Ok(eventlogs)
     }
 }

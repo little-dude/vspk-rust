@@ -1,4 +1,5 @@
-// Copyright (c) 2015-2016, Nokia Inc
+// Copyright (c) 2015 Alcatel-Lucent, (c) 2016 Nokia
+//
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -24,8 +25,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-use bambou::{BambouError, RestEntity, Session, SessionConfig};
-use hyper::client::{Response};
+use bambou::{Error, RestEntity, Session};
+use reqwest::Response;
 use std::collections::BTreeMap;
 use serde_json;
 
@@ -40,229 +41,287 @@ pub use autodiscovercluster::AutoDiscoverCluster;
 pub use autodiscoverhypervisorfromcluster::AutoDiscoverHypervisorFromCluster;
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct VCenterDataCenter<'a> {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
     _session: Option<&'a Session>,
+
     #[serde(rename="ID")]
     id: Option<String>,
-    
+
     #[serde(rename="parentID")]
     parent_id: Option<String>,
+
     #[serde(rename="parentType")]
     parent_type: Option<String>,
+
     owner: Option<String>,
+
     
-    #[serde(rename="VRSConfigurationTime")]
-    vrs_configuration_time: u64,
+    #[serde(rename="VRSConfigurationTimeLimit")]
+    pub vrs_configuration_time_limit: u64,
     
     #[serde(rename="vRequireNuageMetadata")]
-    v_require_nuage_metadata: bool,
-    name: Option<String>,
+    pub v_require_nuage_metadata: bool,
+    
+    pub name: Option<String>,
     
     #[serde(rename="managedObjectID")]
-    managed_object_id: Option<String>,
+    pub managed_object_id: Option<String>,
     
     #[serde(rename="lastUpdatedBy")]
-    last_updated_by: Option<String>,
+    pub last_updated_by: Option<String>,
     
     #[serde(rename="dataDNS1")]
-    data_dns1: Option<String>,
+    pub data_dns1: Option<String>,
     
     #[serde(rename="dataDNS2")]
-    data_dns2: Option<String>,
+    pub data_dns2: Option<String>,
     
     #[serde(rename="dataGateway")]
-    data_gateway: Option<String>,
+    pub data_gateway: Option<String>,
     
     #[serde(rename="dataNetworkPortgroup")]
-    data_network_portgroup: Option<String>,
+    pub data_network_portgroup: Option<String>,
     
     #[serde(rename="datapathSyncTimeout")]
-    datapath_sync_timeout: u64,
+    pub datapath_sync_timeout: u64,
     
     #[serde(rename="secondaryNuageController")]
-    secondary_nuage_controller: Option<String>,
+    pub secondary_nuage_controller: Option<String>,
     
     #[serde(rename="deletedFromVCenter")]
-    deleted_from_vcenter: bool,
+    pub deleted_from_vcenter: bool,
     
     #[serde(rename="genericSplitActivation")]
-    generic_split_activation: bool,
+    pub generic_split_activation: bool,
     
     #[serde(rename="separateDataNetwork")]
-    separate_data_network: bool,
-    personality: Option<String>,
-    description: Option<String>,
+    pub separate_data_network: bool,
+    
+    pub personality: Option<String>,
+    
+    pub description: Option<String>,
     
     #[serde(rename="destinationMirrorPort")]
-    destination_mirror_port: Option<String>,
+    pub destination_mirror_port: Option<String>,
     
     #[serde(rename="metadataServerIP")]
-    metadata_server_ip: Option<String>,
+    pub metadata_server_ip: Option<String>,
     
     #[serde(rename="metadataServerListenPort")]
-    metadata_server_listen_port: u64,
+    pub metadata_server_listen_port: u64,
     
     #[serde(rename="metadataServerPort")]
-    metadata_server_port: u64,
+    pub metadata_server_port: u64,
     
     #[serde(rename="metadataServiceEnabled")]
-    metadata_service_enabled: bool,
+    pub metadata_service_enabled: bool,
     
     #[serde(rename="networkUplinkInterface")]
-    network_uplink_interface: Option<String>,
+    pub network_uplink_interface: Option<String>,
     
     #[serde(rename="networkUplinkInterfaceGateway")]
-    network_uplink_interface_gateway: Option<String>,
+    pub network_uplink_interface_gateway: Option<String>,
     
     #[serde(rename="networkUplinkInterfaceIp")]
-    network_uplink_interface_ip: Option<String>,
+    pub network_uplink_interface_ip: Option<String>,
     
     #[serde(rename="networkUplinkInterfaceNetmask")]
-    network_uplink_interface_netmask: Option<String>,
+    pub network_uplink_interface_netmask: Option<String>,
     
     #[serde(rename="nfsLogServer")]
-    nfs_log_server: Option<String>,
+    pub nfs_log_server: Option<String>,
     
     #[serde(rename="nfsMountPath")]
-    nfs_mount_path: Option<String>,
+    pub nfs_mount_path: Option<String>,
     
     #[serde(rename="mgmtDNS1")]
-    mgmt_dns1: Option<String>,
+    pub mgmt_dns1: Option<String>,
     
     #[serde(rename="mgmtDNS2")]
-    mgmt_dns2: Option<String>,
+    pub mgmt_dns2: Option<String>,
     
     #[serde(rename="mgmtGateway")]
-    mgmt_gateway: Option<String>,
+    pub mgmt_gateway: Option<String>,
     
     #[serde(rename="mgmtNetworkPortgroup")]
-    mgmt_network_portgroup: Option<String>,
+    pub mgmt_network_portgroup: Option<String>,
     
     #[serde(rename="dhcpRelayServer")]
-    dhcp_relay_server: Option<String>,
+    pub dhcp_relay_server: Option<String>,
     
     #[serde(rename="mirrorNetworkPortgroup")]
-    mirror_network_portgroup: Option<String>,
+    pub mirror_network_portgroup: Option<String>,
     
     #[serde(rename="siteId")]
-    site_id: Option<String>,
+    pub site_id: Option<String>,
     
     #[serde(rename="allowDataDHCP")]
-    allow_data_dhcp: bool,
+    pub allow_data_dhcp: bool,
     
     #[serde(rename="allowMgmtDHCP")]
-    allow_mgmt_dhcp: bool,
+    pub allow_mgmt_dhcp: bool,
     
     #[serde(rename="flowEvictionThreshold")]
-    flow_eviction_threshold: u64,
+    pub flow_eviction_threshold: u64,
     
     #[serde(rename="vmNetworkPortgroup")]
-    vm_network_portgroup: Option<String>,
+    pub vm_network_portgroup: Option<String>,
     
     #[serde(rename="entityScope")]
-    entity_scope: Option<String>,
+    pub entity_scope: Option<String>,
     
     #[serde(rename="portgroupMetadata")]
-    portgroup_metadata: bool,
+    pub portgroup_metadata: bool,
     
     #[serde(rename="novaClientVersion")]
-    nova_client_version: u64,
+    pub nova_client_version: u64,
+    
+    #[serde(rename="novaIdentityURLVersion")]
+    pub nova_identity_url_version: Option<String>,
     
     #[serde(rename="novaMetadataServiceAuthUrl")]
-    nova_metadata_service_auth_url: Option<String>,
+    pub nova_metadata_service_auth_url: Option<String>,
     
     #[serde(rename="novaMetadataServiceEndpoint")]
-    nova_metadata_service_endpoint: Option<String>,
+    pub nova_metadata_service_endpoint: Option<String>,
     
     #[serde(rename="novaMetadataServicePassword")]
-    nova_metadata_service_password: Option<String>,
+    pub nova_metadata_service_password: Option<String>,
     
     #[serde(rename="novaMetadataServiceTenant")]
-    nova_metadata_service_tenant: Option<String>,
+    pub nova_metadata_service_tenant: Option<String>,
     
     #[serde(rename="novaMetadataServiceUsername")]
-    nova_metadata_service_username: Option<String>,
+    pub nova_metadata_service_username: Option<String>,
     
     #[serde(rename="novaMetadataSharedSecret")]
-    nova_metadata_shared_secret: Option<String>,
+    pub nova_metadata_shared_secret: Option<String>,
+    
+    #[serde(rename="novaOSKeystoneUsername")]
+    pub nova_os_keystone_username: Option<String>,
+    
+    #[serde(rename="novaProjectDomainName")]
+    pub nova_project_domain_name: Option<String>,
+    
+    #[serde(rename="novaProjectName")]
+    pub nova_project_name: Option<String>,
     
     #[serde(rename="novaRegionName")]
-    nova_region_name: Option<String>,
+    pub nova_region_name: Option<String>,
+    
+    #[serde(rename="novaUserDomainName")]
+    pub nova_user_domain_name: Option<String>,
+    
+    #[serde(rename="upgradePackagePassword")]
+    pub upgrade_package_password: Option<String>,
+    
+    #[serde(rename="upgradePackageURL")]
+    pub upgrade_package_url: Option<String>,
+    
+    #[serde(rename="upgradePackageUsername")]
+    pub upgrade_package_username: Option<String>,
+    
+    #[serde(rename="upgradeScriptTimeLimit")]
+    pub upgrade_script_time_limit: u64,
     
     #[serde(rename="primaryNuageController")]
-    primary_nuage_controller: Option<String>,
+    pub primary_nuage_controller: Option<String>,
     
     #[serde(rename="vrsPassword")]
-    vrs_password: Option<String>,
+    pub vrs_password: Option<String>,
     
     #[serde(rename="vrsUserName")]
-    vrs_user_name: Option<String>,
+    pub vrs_user_name: Option<String>,
     
     #[serde(rename="associatedVCenterID")]
-    associated_vcenter_id: Option<String>,
+    pub associated_vcenter_id: Option<String>,
     
     #[serde(rename="staticRoute")]
-    static_route: Option<String>,
+    pub static_route: Option<String>,
     
     #[serde(rename="staticRouteGateway")]
-    static_route_gateway: Option<String>,
+    pub static_route_gateway: Option<String>,
     
     #[serde(rename="staticRouteNetmask")]
-    static_route_netmask: Option<String>,
+    pub static_route_netmask: Option<String>,
     
     #[serde(rename="ntpServer1")]
-    ntp_server1: Option<String>,
+    pub ntp_server1: Option<String>,
     
     #[serde(rename="ntpServer2")]
-    ntp_server2: Option<String>,
-    mtu: u64,
+    pub ntp_server2: Option<String>,
+    
+    pub mtu: u64,
     
     #[serde(rename="multiVMSsupport")]
-    multi_vmssupport: bool,
+    pub multi_vmssupport: bool,
     
     #[serde(rename="multicastReceiveInterface")]
-    multicast_receive_interface: Option<String>,
+    pub multicast_receive_interface: Option<String>,
     
     #[serde(rename="multicastReceiveInterfaceIP")]
-    multicast_receive_interface_ip: Option<String>,
+    pub multicast_receive_interface_ip: Option<String>,
     
     #[serde(rename="multicastReceiveInterfaceNetmask")]
-    multicast_receive_interface_netmask: Option<String>,
+    pub multicast_receive_interface_netmask: Option<String>,
     
     #[serde(rename="multicastReceiveRange")]
-    multicast_receive_range: Option<String>,
+    pub multicast_receive_range: Option<String>,
     
     #[serde(rename="multicastSendInterface")]
-    multicast_send_interface: Option<String>,
+    pub multicast_send_interface: Option<String>,
     
     #[serde(rename="multicastSendInterfaceIP")]
-    multicast_send_interface_ip: Option<String>,
+    pub multicast_send_interface_ip: Option<String>,
     
     #[serde(rename="multicastSendInterfaceNetmask")]
-    multicast_send_interface_netmask: Option<String>,
+    pub multicast_send_interface_netmask: Option<String>,
     
     #[serde(rename="multicastSourcePortgroup")]
-    multicast_source_portgroup: Option<String>,
+    pub multicast_source_portgroup: Option<String>,
     
     #[serde(rename="customizedScriptURL")]
-    customized_script_url: Option<String>,
+    pub customized_script_url: Option<String>,
     
     #[serde(rename="ovfURL")]
-    ovf_url: Option<String>,
+    pub ovf_url: Option<String>,
     
     #[serde(rename="externalID")]
-    external_id: Option<String>,
+    pub external_id: Option<String>,
     
 }
 
 impl<'a> RestEntity<'a> for VCenterDataCenter<'a> {
-    fn fetch(&mut self) -> Result<Response, BambouError> {
+    fn fetch(&mut self) -> Result<Response, Error> {
         match self._session {
-            Some(session) => session.fetch(self),
-            None => Err(BambouError::NoSession),
+            Some(session) => session.fetch_entity(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn save(&mut self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.save(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn delete(self) -> Result<Response, Error> {
+        match self._session {
+            Some(session) => session.delete(self),
+            None => Err(Error::NoSession),
+        }
+    }
+
+    fn create_child<C>(&self, child: &mut C) -> Result<Response, Error>
+        where C: RestEntity<'a>
+    {
+        match self._session {
+            Some(session) => session.create_child(self, child),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -282,12 +341,12 @@ impl<'a> RestEntity<'a> for VCenterDataCenter<'a> {
         self.id.as_ref().and_then(|id| Some(id.as_str()))
     }
 
-    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, BambouError>
+    fn fetch_children<R>(&self, children: &mut Vec<R>) -> Result<Response, Error>
         where R: RestEntity<'a>
     {
         match self._session {
             Some(session) => session.fetch_children(self, children),
-            None => Err(BambouError::NoSession),
+            None => Err(Error::NoSession),
         }
     }
 
@@ -298,79 +357,55 @@ impl<'a> RestEntity<'a> for VCenterDataCenter<'a> {
     fn set_session(&mut self, session: &'a Session) {
         self._session = Some(session);
     }
-
-    fn save(&mut self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.save(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn delete(self) -> Result<Response, BambouError> {
-        match self._session {
-            Some(session) => session.delete(self),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
-    fn create_child<C>(&self, child: &mut C) -> Result<Response, BambouError>
-        where C: RestEntity<'a>
-    {
-        match self._session {
-            Some(session) => session.create_child(self, child),
-            None => Err(BambouError::NoSession),
-        }
-    }
-
 }
 
 impl<'a> VCenterDataCenter<'a> {
 
-    fn fetch_vcenterclusters(&self) -> Result<Vec<VCenterCluster>, BambouError> {
+    pub fn fetch_vcenterclusters(&self) -> Result<Vec<VCenterCluster>, Error> {
         let mut vcenterclusters = Vec::<VCenterCluster>::new();
-        try!(self.fetch_children(&mut vcenterclusters));
+        let _ = self.fetch_children(&mut vcenterclusters)?;
         Ok(vcenterclusters)
     }
 
-    fn fetch_vcenterhypervisors(&self) -> Result<Vec<VCenterHypervisor>, BambouError> {
+    pub fn fetch_vcenterhypervisors(&self) -> Result<Vec<VCenterHypervisor>, Error> {
         let mut vcenterhypervisors = Vec::<VCenterHypervisor>::new();
-        try!(self.fetch_children(&mut vcenterhypervisors));
+        let _ = self.fetch_children(&mut vcenterhypervisors)?;
         Ok(vcenterhypervisors)
     }
 
-    fn fetch_metadatas(&self) -> Result<Vec<Metadata>, BambouError> {
+    pub fn fetch_metadatas(&self) -> Result<Vec<Metadata>, Error> {
         let mut metadatas = Vec::<Metadata>::new();
-        try!(self.fetch_children(&mut metadatas));
+        let _ = self.fetch_children(&mut metadatas)?;
         Ok(metadatas)
     }
 
-    fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, BambouError> {
+    pub fn fetch_globalmetadatas(&self) -> Result<Vec<GlobalMetadata>, Error> {
         let mut globalmetadatas = Vec::<GlobalMetadata>::new();
-        try!(self.fetch_children(&mut globalmetadatas));
+        let _ = self.fetch_children(&mut globalmetadatas)?;
         Ok(globalmetadatas)
     }
 
-    fn fetch_vrsaddressranges(&self) -> Result<Vec<VRSAddressRange>, BambouError> {
+    pub fn fetch_vrsaddressranges(&self) -> Result<Vec<VRSAddressRange>, Error> {
         let mut vrsaddressranges = Vec::<VRSAddressRange>::new();
-        try!(self.fetch_children(&mut vrsaddressranges));
+        let _ = self.fetch_children(&mut vrsaddressranges)?;
         Ok(vrsaddressranges)
     }
 
-    fn fetch_vrsredeploymentpolicies(&self) -> Result<Vec<VRSRedeploymentpolicy>, BambouError> {
+    pub fn fetch_vrsredeploymentpolicies(&self) -> Result<Vec<VRSRedeploymentpolicy>, Error> {
         let mut vrsredeploymentpolicies = Vec::<VRSRedeploymentpolicy>::new();
-        try!(self.fetch_children(&mut vrsredeploymentpolicies));
+        let _ = self.fetch_children(&mut vrsredeploymentpolicies)?;
         Ok(vrsredeploymentpolicies)
     }
 
-    fn fetch_autodiscoveredclusters(&self) -> Result<Vec<AutoDiscoverCluster>, BambouError> {
+    pub fn fetch_autodiscoveredclusters(&self) -> Result<Vec<AutoDiscoverCluster>, Error> {
         let mut autodiscoveredclusters = Vec::<AutoDiscoverCluster>::new();
-        try!(self.fetch_children(&mut autodiscoveredclusters));
+        let _ = self.fetch_children(&mut autodiscoveredclusters)?;
         Ok(autodiscoveredclusters)
     }
 
-    fn fetch_autodiscoveredhypervisors(&self) -> Result<Vec<AutoDiscoverHypervisorFromCluster>, BambouError> {
+    pub fn fetch_autodiscoveredhypervisors(&self) -> Result<Vec<AutoDiscoverHypervisorFromCluster>, Error> {
         let mut autodiscoveredhypervisors = Vec::<AutoDiscoverHypervisorFromCluster>::new();
-        try!(self.fetch_children(&mut autodiscoveredhypervisors));
+        let _ = self.fetch_children(&mut autodiscoveredhypervisors)?;
         Ok(autodiscoveredhypervisors)
     }
 }
