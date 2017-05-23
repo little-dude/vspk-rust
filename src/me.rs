@@ -25,7 +25,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-use bambou::{Error, RestEntity, Session};
+use bambou::{Error, RestEntity, RestRootEntity, Session};
 use reqwest::Response;
 use std::collections::BTreeMap;
 use serde_json;
@@ -646,5 +646,11 @@ impl<'a> Me<'a> {
         let mut systemconfigs = Vec::<SystemConfig>::new();
         let _ = self.fetch_children(&mut systemconfigs)?;
         Ok(systemconfigs)
+    }
+}
+
+impl<'a> RestRootEntity<'a> for Me<'a> {
+    fn get_api_key(&self) -> Option<&str> {
+        self.api_key.as_ref().map(|s| s.as_str())
     }
 }

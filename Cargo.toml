@@ -11,8 +11,10 @@ keywords = ["rest"]
 license-file = "LICENSE"
 
 [dependencies]
-reqwest= "*"
+# reqwest= "*"
+reqwest = { path = "/home/corentih/rust/reqwest" }
 serde = "*"
 serde_json = "*"
 serde_derive = "*"
-bambou = { git = "https://github.com/little-dude/bambou-rs" }
+# bambou = { git = "https://github.com/little-dude/bambou-rs" }
+bambou = { path = "/home/corentih/rust/bambou-rs" }
